@@ -238,10 +238,10 @@ def _next_run_details(
 
 def validate_speaker_boundaries(
     words: list[dict],
-    hard_min_gap_seconds: float = 0.15,
-    soft_min_gap_seconds: float = 0.35,
-    min_new_run_words: int = 3,
-    min_new_run_duration_seconds: float = 0.65,
+    hard_min_gap_seconds: float = 0.0,
+    soft_min_gap_seconds: float = 0.0,
+    min_new_run_words: int = 1,
+    min_new_run_duration_seconds: float = 0.0,
 ) -> tuple[list[dict], list[BoundaryDecision]]:
     if len(words) < 2:
         return words, []
@@ -287,33 +287,10 @@ def validate_speaker_boundaries(
                 "protected_phrase:"
                 + str(phrase)
             )
-        elif gap < hard_min_gap_seconds:
-            accept = False
-            reason = "gap_below_hard_threshold"
-        elif (
-            gap < soft_min_gap_seconds
-            and not sentence_boundary
-        ):
-            accept = False
-            reason = (
-                "short_gap_without_sentence_boundary"
-            )
-        elif (
-            run_words < min_new_run_words
-            and run_duration
-            < min_new_run_duration_seconds
-        ):
-            accept = False
-            reason = "new_speaker_run_not_stable"
-        elif (
-            not sentence_boundary
-            and gap < 0.55
-            and run_words < 5
-        ):
-            accept = False
-            reason = (
-                "mid_sentence_change_not_confirmed"
-            )
+        # Preserve Pyannote's word-level boundaries by default. Natural
+        # conversation often contains overlap, interruptions and valid
+        # one-word replies such as "Да". Those must not be reassigned to the
+        # previous speaker merely because there is no acoustic pause.
 
         proposed_speaker = str(
             current["speaker"]
@@ -347,46 +324,6 @@ def validate_speaker_boundaries(
                 reason=reason,
             )
         )
-
-    # A rejected boundary can create another artificial
-    # boundary one word later. Repeat until stable.
-    changed = True
-    iterations = 0
-
-    while changed and iterations < 4:
-        changed = False
-        iterations += 1
-
-        for index in range(1, len(words)):
-            previous = words[index - 1]
-            current = words[index]
-
-            if (
-                current["speaker"]
-                == previous["speaker"]
-            ):
-                continue
-
-            gap = max(
-                0.0,
-                current["start"]
-                - previous["end"],
-            )
-            protected, _ = (
-                _boundary_inside_protected_phrase(
-                    index,
-                    protected_spans,
-                )
-            )
-
-            if (
-                protected
-                or gap < hard_min_gap_seconds
-            ):
-                current["speaker"] = (
-                    previous["speaker"]
-                )
-                changed = True
 
     return words, decisions
 
@@ -501,10 +438,10 @@ def stabilize_speaker_utterances(
 def stabilize_speaker_utterances_with_debug(
     segments: list,
     max_gap_seconds: float = 1.4,
-    hard_min_gap_seconds: float = 0.15,
-    soft_min_gap_seconds: float = 0.35,
-    min_new_run_words: int = 3,
-    min_new_run_duration_seconds: float = 0.65,
+    hard_min_gap_seconds: float = 0.0,
+    soft_min_gap_seconds: float = 0.0,
+    min_new_run_words: int = 1,
+    min_new_run_duration_seconds: float = 0.0,
 ) -> tuple[
     list[SpeakerUtterance],
     dict,

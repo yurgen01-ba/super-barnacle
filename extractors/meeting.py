@@ -23,8 +23,16 @@ from utils.text import chunk_text
 from utils.video_files import cleanup_file, save_uploaded_file_to_temp
 
 
-whisper_model = whisper.load_model(WHISPER_MODEL_NAME)
+whisper_model = None
 ProgressCallback = Callable[[dict], None]
+
+
+def _get_legacy_whisper_model():
+    """Load the fallback model only if WhisperX is unavailable."""
+    global whisper_model
+    if whisper_model is None:
+        whisper_model = whisper.load_model(WHISPER_MODEL_NAME)
+    return whisper_model
 
 
 def _emit(callback: ProgressCallback | None, event: dict):
@@ -125,7 +133,7 @@ def transcribe_audio_segments(
             initial_prompt=initial_prompt,
         )
 
-        result = whisper_model.transcribe(segment_path, **kwargs)
+        result = _get_legacy_whisper_model().transcribe(segment_path, **kwargs)
 
         raw_text = str(result.get("text") or "").strip()
         repaired_text = apply_domain_glossary_repair(raw_text)
@@ -151,7 +159,7 @@ def transcribe_audio_segments(
                 initial_prompt=initial_prompt,
                 retry=True,
             )
-            retry_result = whisper_model.transcribe(segment_path, **retry_kwargs)
+            retry_result = _get_legacy_whisper_model().transcribe(segment_path, **retry_kwargs)
 
             retry_raw_text = str(retry_result.get("text") or "").strip()
             retry_repaired_text = apply_domain_glossary_repair(retry_raw_text)

@@ -34,6 +34,10 @@ DOMAIN_TERMS = {
     "проблем": "problem",
     "скоуп": "scope",
     "спикер": "speaker",
+    "саммари": "summary",
+    "самари": "summary",
+    "аккаунтс": "accounts",
+    "экаунтс": "accounts",
 }
 
 
@@ -60,7 +64,7 @@ def apply_domain_glossary_repair(text: str) -> str:
         repaired = re.sub(re.escape(wrong), correct, repaired, flags=re.IGNORECASE)
 
     for alias, canonical in DOMAIN_TERMS.items():
-        repaired = re.sub(rf"\\b{re.escape(alias)}\\b", canonical, repaired, flags=re.IGNORECASE)
+        repaired = re.sub(rf"\b{re.escape(alias)}\b", canonical, repaired, flags=re.IGNORECASE)
 
-    repaired = re.sub(r"\\s+", " ", repaired).strip()
+    repaired = re.sub(r"\s+", " ", repaired).strip()
     return repaired

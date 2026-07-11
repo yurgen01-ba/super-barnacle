@@ -14,13 +14,32 @@ WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "float16")
 
 AUDIO_TRANSCRIPTION_BACKEND = os.getenv("AUDIO_TRANSCRIPTION_BACKEND", "whisperx")
 
-WHISPERX_MODEL_NAME = os.getenv("WHISPERX_MODEL_NAME", "turbo")
+WHISPERX_MODEL_NAME = os.getenv("WHISPERX_MODEL_NAME", "large-v3")
 
 WHISPERX_DEVICE = os.getenv("WHISPERX_DEVICE", "cuda")
 
 WHISPERX_COMPUTE_TYPE = os.getenv("WHISPERX_COMPUTE_TYPE", "float16")
 
-WHISPERX_BATCH_SIZE = os.getenv("WHISPERX_BATCH_SIZE", "8")
+WHISPERX_BATCH_SIZE = os.getenv("WHISPERX_BATCH_SIZE", "4")
+
+WHISPERX_LANGUAGE = os.getenv("WHISPERX_LANGUAGE", "ru")
+
+WHISPERX_INITIAL_PROMPT = os.getenv(
+    "WHISPERX_INITIAL_PROMPT",
+    (
+        "Русская техническая встреча. Термины: Jira, Jira task, title, "
+        "in scope of this task, info panel, summary, accounts, OrgMeter, "
+        "Confluence, white label, field scope."
+    ),
+)
+
+WHISPERX_HOTWORDS = os.getenv(
+    "WHISPERX_HOTWORDS",
+    (
+        "Jira, Jira task, title, in scope of this task, info panel, "
+        "summary, accounts, OrgMeter, Confluence, white label, field scope"
+    ),
+)
 
 WHISPERX_ENABLE_ALIGNMENT = os.getenv("WHISPERX_ENABLE_ALIGNMENT", "true")
 

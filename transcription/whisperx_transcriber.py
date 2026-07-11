@@ -14,6 +14,9 @@ from config import (
     WHISPERX_DEVICE,
     WHISPERX_ENABLE_ALIGNMENT,
     WHISPERX_ENABLE_DIARIZATION,
+    WHISPERX_HOTWORDS,
+    WHISPERX_INITIAL_PROMPT,
+    WHISPERX_LANGUAGE,
     WHISPERX_MODEL_NAME,
 )
 from transcription.diarization_deep_diagnostics import DiarizationDiagnostics
@@ -41,11 +44,18 @@ class WhisperXTranscriber:
         self.batch_size = int(WHISPERX_BATCH_SIZE)
         self.enable_alignment = _bool(WHISPERX_ENABLE_ALIGNMENT)
         self.enable_diarization = _bool(WHISPERX_ENABLE_DIARIZATION)
+        self.language = str(WHISPERX_LANGUAGE or "ru")
         self.model = whisperx.load_model(
             WHISPERX_MODEL_NAME,
             self.device,
             compute_type=self.compute_type,
-            language=None,
+            language=self.language,
+            asr_options={
+                "initial_prompt": str(WHISPERX_INITIAL_PROMPT or "") or None,
+                "hotwords": str(WHISPERX_HOTWORDS or "") or None,
+                "condition_on_previous_text": True,
+                "hallucination_silence_threshold": 1.5,
+            },
         )
 
     def transcribe(
@@ -89,10 +99,11 @@ class WhisperXTranscriber:
                 "batch_size": self.batch_size,
             },
         )
+        effective_language = language or self.language
         raw = self.model.transcribe(
             audio,
             batch_size=self.batch_size,
-            language=language,
+            language=effective_language,
         )
         diarization_debug.complete_stage(
             "asr_transcription",
@@ -102,7 +113,7 @@ class WhisperXTranscriber:
                 "segments": len(raw.get("segments") or []),
             },
         )
-        detected_language = str(raw.get("language") or language or "unknown")
+        detected_language = str(raw.get("language") or effective_language or "unknown")
         result = raw
         alignment_used = False
         diarization_used = False
