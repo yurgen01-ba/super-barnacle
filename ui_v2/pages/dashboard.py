@@ -38,7 +38,7 @@ def _latest_changes(project_id: str):
                 st.text("Дополнительных данных нет")
 
 
-def _source_card(title: str, caption: str, button_label: str, key: str, loader: str):
+def _source_card(title: str, caption: str, key: str, loader: str):
     st.markdown(
         f"""
         <div class="pb-source-card">
@@ -49,17 +49,14 @@ def _source_card(title: str, caption: str, button_label: str, key: str, loader: 
         unsafe_allow_html=True,
     )
 
-    if st.button(button_label, key=key, width="stretch"):
-        set_dashboard_loader(loader)
+    is_open = get_dashboard_loader() == loader
+    if st.button("Свернуть" if is_open else "Открыть", key=key, width="stretch"):
+        set_dashboard_loader(None if is_open else loader)
         st.rerun()
 
 
 def _render_dashboard_loader(memory_repository):
     loader = get_dashboard_loader()
-
-    if not loader:
-        st.info("Выберите карточку источника выше, чтобы открыть рабочий загрузчик прямо на Dashboard.")
-        return
 
     title_by_loader = {
         "meetings": "Meetings loader",
@@ -69,12 +66,6 @@ def _render_dashboard_loader(memory_repository):
     }
 
     st.markdown(f"#### {title_by_loader.get(loader, 'Data loader')}")
-
-    col_close, _ = st.columns([0.18, 0.82])
-    with col_close:
-        if st.button("Close loader", key="close_dashboard_loader", width="stretch"):
-            set_dashboard_loader(None)
-            st.rerun()
 
     if loader == "meetings":
         render_meetings_tab(memory_repository)
@@ -116,13 +107,14 @@ def render_dashboard(memory_repository):
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        _source_card("Встречи", "Видео/аудио встреч, транскрипт, vision и facts.", "Открыть", "dash_upload_meeting", "meetings")
+        _source_card("Встречи", "Видео/аудио встреч, транскрипт, vision и facts.", "dash_upload_meeting", "meetings")
     with c2:
-        _source_card("Slack", "Импорт сообщений и обсуждений.", "Открыть", "dash_import_slack", "slack")
+        _source_card("Slack", "Импорт сообщений и обсуждений.", "dash_import_slack", "slack")
     with c3:
-        _source_card("Confluence", "Страницы, статьи и документация.", "Открыть", "dash_import_confluence", "confluence")
+        _source_card("Confluence", "Страницы, статьи и документация.", "dash_import_confluence", "confluence")
     with c4:
-        _source_card("Jira", "Задачи, комментарии и статусы.", "Открыть", "dash_import_jira", "jira")
+        _source_card("Jira", "Задачи, комментарии и статусы.", "dash_import_jira", "jira")
 
-    with st.expander("Active data loader", expanded=get_dashboard_loader() is not None):
-        _render_dashboard_loader(memory_repository)
+    if get_dashboard_loader() is not None:
+        with st.expander("Active data loader", expanded=True):
+            _render_dashboard_loader(memory_repository)

@@ -3,6 +3,7 @@ import streamlit as st
 from ai.confluence_article_generator import generate_confluence_article
 from progress.progress_manager import ProgressManager
 from repositories.memory_repository import MemoryRepository
+from services.user_artifact_service import save_user_generated_artifact
 
 
 def render_confluence_article_tab(memory_repository: MemoryRepository):
@@ -99,6 +100,15 @@ def render_confluence_article_tab(memory_repository: MemoryRepository):
 
             st.success("Confluence article generated.")
             st.markdown(article)
+
+            save_user_generated_artifact(
+                project_id=memory_repository.project_id,
+                artifact_type="confluence_article",
+                title=article_title.strip() or "Confluence Article",
+                content=article,
+                description="Confluence-ready article generated on user request.",
+                metadata={"article_type": article_type, "audience": audience},
+            )
 
             st.download_button(
                 "Download article as Markdown",

@@ -3,6 +3,7 @@ import streamlit as st
 from ai.jira_ticket_generator import generate_jira_ticket_drafts_markdown
 from progress.progress_manager import ProgressManager
 from repositories.memory_repository import MemoryRepository
+from services.user_artifact_service import save_user_generated_artifact
 
 
 def render_jira_ticket_drafts_tab(memory_repository: MemoryRepository):
@@ -87,6 +88,15 @@ def render_jira_ticket_drafts_tab(memory_repository: MemoryRepository):
 
             st.success("Jira ticket drafts generated.")
             st.markdown(markdown)
+
+            save_user_generated_artifact(
+                project_id=memory_repository.project_id,
+                artifact_type="jira_ticket_drafts",
+                title="Jira Ticket Drafts",
+                content=markdown,
+                description="Jira-ready issue drafts generated on user request.",
+                metadata={"ticket_style": ticket_style, "granularity": granularity},
+            )
 
             st.download_button(
                 "Download Jira tickets as Markdown",

@@ -3,6 +3,7 @@ import streamlit as st
 from ai.report_generator import generate_project_report
 from progress.progress_manager import ProgressManager
 from repositories.memory_repository import MemoryRepository
+from services.user_artifact_service import save_user_generated_artifact
 
 
 def render_report_tab(memory_repository: MemoryRepository):
@@ -44,6 +45,15 @@ def render_report_tab(memory_repository: MemoryRepository):
             st.success("Report generated successfully.")
             st.markdown("## Generated Project Report")
             st.write(report)
+
+            save_user_generated_artifact(
+                project_id=memory_repository.project_id,
+                artifact_type="project_report",
+                title="Project Report",
+                content=report,
+                description="Project report generated on user request.",
+                metadata={"report_mode": report_mode},
+            )
 
             progress.done("Report generation completed.")
 

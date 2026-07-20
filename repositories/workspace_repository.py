@@ -14,6 +14,7 @@ DEFAULT_PROJECT_ID = "default"
 DEFAULT_PROJECT_NAME = "OrgMeter"
 
 DEFAULT_MEETING_SETTINGS = {
+    "slack_messages_per_chunk": 12,
     "language": "ru",
     "extract_canonical_facts": True,
     "fact_extractor_model": "qwen2.5:7b",
@@ -221,20 +222,21 @@ class WorkspaceRepository:
             "SELECT COUNT(*) FROM knowledge WHERE project_id = ?", (project_id,)
         ).fetchone()[0]
         conn.close()
-        artifact_count = artifact_repository.count_by_project(project_id)
+        all_artifact_count = artifact_repository.count_by_project(project_id)
+        user_artifact_count = artifact_repository.count_user_generated_by_project(project_id)
         # A transparent readiness score: sources establish coverage, extracted
         # knowledge and artifacts establish usable depth.
         readiness = min(
             100,
             (min(source_count, 5) * 10)
             + (min(knowledge_count, 50) * 1)
-            + (min(artifact_count, 10) * 2),
+            + (min(all_artifact_count, 10) * 2),
         )
         return {
             "knowledge_health": readiness,
             "sources": source_count,
             "knowledge_items": knowledge_count,
-            "artifacts": artifact_count,
+            "artifacts": user_artifact_count,
         }
 
 

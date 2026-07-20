@@ -42,6 +42,26 @@ def render_settings():
             st.rerun()
 
     st.divider()
+    st.subheader("Slack")
+    st.caption("Параметры разбиения сообщений при импорте переписки Slack.")
+    with st.form("slack_processing_settings"):
+        slack_messages_per_chunk = st.slider(
+            "Сообщений в одном блоке",
+            5,
+            30,
+            int(settings.get("slack_messages_per_chunk", 12)),
+            1,
+        )
+        slack_submitted = st.form_submit_button("Сохранить настройки Slack", type="primary")
+
+    if slack_submitted:
+        workspace_repository.save_settings(
+            project_id,
+            {**settings, "slack_messages_per_chunk": slack_messages_per_chunk},
+        )
+        st.success("Настройки Slack сохранены")
+
+    st.divider()
     st.subheader("Расшифровка встреч")
     st.caption(
         "Эти параметры применяются ко всем новым видео. Количество кадров экрана "
@@ -156,6 +176,7 @@ def render_settings():
 
     if submitted:
         workspace_repository.save_settings(project_id, {
+            "slack_messages_per_chunk": settings.get("slack_messages_per_chunk", 12),
             "language": LANGUAGES[language_label],
             "extract_canonical_facts": extract_canonical_facts,
             "fact_extractor_model": fact_extractor_model,

@@ -1,7 +1,11 @@
 import streamlit as st
 
 from ai.graph_answering import answer_project_question_over_graph
-from ui_v2.state import get_chat_artifact, set_chat_artifact
+from ui_v2.components.user_artifact_generator import (
+    render_generic_artifact_generator,
+    render_user_artifact_generator,
+)
+from ui_v2.state import get_chat_artifact, get_current_project_id, set_chat_artifact
 
 
 def _set_prompt(prompt: str):
@@ -38,30 +42,43 @@ def _render_artifact_area(memory_repository):
         return
 
     if selected == "confluence":
-        try:
-            from ui.confluence_article import render_confluence_article_tab
-
-            render_confluence_article_tab(memory_repository)
-        except Exception as exc:
-            st.warning("Confluence article generator is not available in this build.")
-            st.caption(str(exc))
+        render_user_artifact_generator(
+            project_id=get_current_project_id(),
+            artifact_type="confluence_article",
+            default_title="Статья Confluence",
+            default_instruction=(
+                "Подготовь готовую к публикации статью Confluence: обзор, цели, процессы, "
+                "требования, решения, риски и открытые вопросы. Используй только подтверждённый контекст проекта."
+            ),
+            key_prefix="ui_v2_confluence_artifact",
+        )
 
     elif selected == "all":
-        try:
-            from ui.workspace.artifacts import render_artifacts_area
-
-            render_artifacts_area(memory_repository)
-        except Exception as exc:
-            st.warning("Artifacts workspace is not available in this build.")
-            st.caption(str(exc))
+        render_generic_artifact_generator(get_current_project_id())
 
     elif selected == "jira":
-        st.info("Jira artifact generator entry-point is defined, but the UI generator is not connected yet.")
-        st.button("Generate Jira from graph context", key="ui_v2_jira_placeholder", disabled=True)
+        render_user_artifact_generator(
+            project_id=get_current_project_id(),
+            artifact_type="jira_ticket_drafts",
+            default_title="Черновики Jira-задач",
+            default_instruction=(
+                "Создай набор Jira-ready задач. Для каждой укажи тип, summary, description, "
+                "priority, acceptance criteria, зависимости и вопросы для аналитика. Не выдумывай требования."
+            ),
+            key_prefix="ui_v2_jira_artifact",
+        )
 
     elif selected == "tests":
-        st.info("Test case generator entry-point is defined, but the UI generator is not connected yet.")
-        st.button("Generate test cases from graph context", key="ui_v2_tests_placeholder", disabled=True)
+        render_user_artifact_generator(
+            project_id=get_current_project_id(),
+            artifact_type="test_cases",
+            default_title="Тест-кейсы",
+            default_instruction=(
+                "Создай тест-кейсы по подтверждённым требованиям и бизнес-правилам. Для каждого укажи "
+                "предусловия, шаги, ожидаемый результат, приоритет и связь с требованием. Добавь негативные сценарии."
+            ),
+            key_prefix="ui_v2_tests_artifact",
+        )
 
 
 def render_chat_panel(memory_repository=None):

@@ -42,6 +42,18 @@ class ArtifactRepository:
         for row in rows:
             item=dict(zip(keys,row)); item["metadata"]=json.loads(item.pop("metadata_json") or "{}"); result.append(item)
         return result
+    @staticmethod
+    def is_user_generated(artifact: dict) -> bool:
+        metadata = artifact.get("metadata") or {}
+        return metadata.get("origin") == "user_ai_request"
+    def list_user_generated_by_project(self, project_id: str, limit: int = 1000) -> list[dict]:
+        return [
+            artifact
+            for artifact in self.list_by_project(project_id, limit=limit)
+            if self.is_user_generated(artifact)
+        ]
+    def count_user_generated_by_project(self, project_id: str) -> int:
+        return len(self.list_user_generated_by_project(project_id))
     def delete(self, artifact_id: str, project_id: str) -> bool:
         with self._connect() as conn:
             cursor = conn.execute(

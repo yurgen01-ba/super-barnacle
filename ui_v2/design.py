@@ -72,6 +72,42 @@ def inject_ui_v2_theme():
                 box-shadow: none !important;
             }
 
+            [data-testid="stFormSubmitButton"] button,
+            [data-testid="stDownloadButton"] button,
+            button[data-testid^="stBaseButton"] {
+                border-radius: 10px !important;
+                border: 1px solid var(--pb-border) !important;
+                background: #18181B !important;
+                color: #E4E4E7 !important;
+                -webkit-text-fill-color: #E4E4E7 !important;
+                box-shadow: none !important;
+            }
+
+            [data-testid="stFormSubmitButton"] button *,
+            [data-testid="stDownloadButton"] button *,
+            button[data-testid^="stBaseButton"] * {
+                color: inherit !important;
+                -webkit-text-fill-color: inherit !important;
+            }
+
+            [data-testid="stFormSubmitButton"] button:hover,
+            [data-testid="stDownloadButton"] button:hover,
+            button[data-testid^="stBaseButton"]:hover {
+                border-color: rgba(59,130,246,0.55) !important;
+                background: rgba(59,130,246,0.12) !important;
+                color: #FFFFFF !important;
+            }
+
+            [data-testid="stFormSubmitButton"] button:disabled,
+            [data-testid="stDownloadButton"] button:disabled,
+            button[data-testid^="stBaseButton"]:disabled {
+                border-color: rgba(63,63,70,0.72) !important;
+                background: rgba(24,24,27,0.58) !important;
+                color: #71717A !important;
+                -webkit-text-fill-color: #71717A !important;
+                opacity: 1 !important;
+            }
+
             div[data-testid="stButton"] button:hover {
                 border-color: rgba(59,130,246,0.55) !important;
                 background-color: rgba(59,130,246,0.12) !important;
@@ -186,9 +222,61 @@ def inject_ui_v2_theme():
 
             div[data-baseweb="popover"],
             div[data-baseweb="menu"],
-            ul[role="listbox"] {
+            [data-testid="stSelectboxVirtualDropdown"],
+            [role="listbox"] {
                 background: #18181B !important;
                 color: var(--pb-text) !important;
+                border-color: #3F3F46 !important;
+            }
+
+            [role="option"],
+            [role="option"] > div {
+                background: #18181B !important;
+                color: #E4E4E7 !important;
+                -webkit-text-fill-color: #E4E4E7 !important;
+            }
+
+            [role="option"][data-focused="true"],
+            [role="option"][aria-selected="true"],
+            [role="option"]:hover,
+            [role="option"][data-focused="true"] > div,
+            [role="option"][aria-selected="true"] > div,
+            [role="option"]:hover > div {
+                background: #27272A !important;
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+            }
+
+            [data-testid="stCheckbox"] label:not([data-selected="true"]) > div:first-of-type {
+                background: #18181B !important;
+                border: 1px solid #52525B !important;
+            }
+
+            [data-testid="stCheckbox"] label[data-selected="true"] > div:first-of-type {
+                border-color: #FF4B4B !important;
+            }
+
+            [data-testid="stRadioOption"]:not([data-selected="true"]) > div > div > div:first-child {
+                background: #18181B !important;
+                border: 1px solid #52525B !important;
+            }
+
+            [data-testid="stRadioOption"]:not([data-selected="true"]) > div > div > div:first-child > div {
+                background: #18181B !important;
+            }
+
+            [role="tooltip"],
+            [data-testid="stTooltipContent"] {
+                background: #18181B !important;
+                color: #E4E4E7 !important;
+                border: 1px solid #3F3F46 !important;
+                box-shadow: 0 10px 28px rgba(0,0,0,0.42) !important;
+            }
+
+            [data-testid="stTooltipContent"] *,
+            [role="tooltip"] * {
+                color: #E4E4E7 !important;
+                -webkit-text-fill-color: #E4E4E7 !important;
             }
 
             .st-key-pb_navigation {

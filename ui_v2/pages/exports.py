@@ -29,13 +29,19 @@ def _download_payload(artifact: dict) -> tuple[str, str, str]:
 
 def render_exports():
     project_id = get_current_project_id()
-    artifacts = artifact_repository.list_by_project(project_id)
+    artifacts = artifact_repository.list_user_generated_by_project(project_id)
 
     st.title("Экспорт данных")
-    st.caption("Все готовые результаты текущего проекта: документы, Jira-задачи, презентации и другие артефакты.")
+    st.caption(
+        "Готовые документы, Jira-задачи, презентации и другие результаты, "
+        "которые пользователь запросил у AI."
+    )
 
     if not artifacts:
-        st.info("В этом проекте пока нет артефактов для экспорта.")
+        st.info(
+            "Пользовательских AI-артефактов пока нет. Создайте документ, Jira-задачи "
+            "или другой результат во вкладке «Артефакты» справа."
+        )
         return
 
     query = st.text_input("Поиск", placeholder="Название или тип артефакта")

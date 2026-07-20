@@ -1,9 +1,6 @@
 import streamlit as st
-
-from repositories.workspace_repository import workspace_repository
 from ui_v2.state import (
     get_current_page,
-    get_current_project_id,
     open_artifacts,
     open_source,
     set_current_page,
@@ -35,7 +32,6 @@ def _source_nav(label: str, glyph: str, source: str):
 
 
 def render_menu():
-    project = workspace_repository.get_project(get_current_project_id())
     st.markdown(
         """
         <div class="pb-brand">
@@ -73,13 +69,3 @@ def render_menu():
         st.caption("ПРОЕКТ")
         _nav("Настройки", "⚙︎", "settings")
         _nav("Модель проекта", "⬡", "project_model")
-
-    st.markdown(
-        f"""
-        <div class="pb-current-project">
-            <div class="pb-project-label">ОТКРЫТЫЙ ПРОЕКТ</div>
-            <div class="pb-project-name">{project['name']}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )

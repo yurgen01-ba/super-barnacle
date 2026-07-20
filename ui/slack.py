@@ -3,6 +3,7 @@ import streamlit as st
 from jobs.extraction_tasks import process_slack_text_job
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
+from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
 
@@ -33,7 +34,9 @@ def render_slack_tab(memory_repository: MemoryRepository):
         placeholder="[10:01] Alice: We decided to use USDC as settlement currency.",
     )
 
-    chunk_size = st.slider("Slack messages per chunk", 5, 30, 12, 1)
+    chunk_size = int(
+        workspace_repository.get_settings(project_id).get("slack_messages_per_chunk", 12)
+    )
 
     active_job = _render_active_job(project_id)
     if active_job:
