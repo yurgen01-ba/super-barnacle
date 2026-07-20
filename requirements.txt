@@ -4,3 +4,4 @@ openai-whisper
 python-dotenv
 pydantic
 pypdf
+py7zr

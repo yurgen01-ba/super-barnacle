@@ -40,7 +40,7 @@ def render_confluence_tab(memory_repository: MemoryRepository):
     if active_job:
         return
 
-    if st.button("Process Confluence article", key="process_confluence_article_button"):
+    if st.button("Process Confluence article", key="process_confluence_article_button", type="primary"):
         if not confluence_text.strip():
             st.warning("Paste Confluence article text first.")
             return

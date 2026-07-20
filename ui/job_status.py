@@ -4,6 +4,7 @@ import streamlit as st
 
 from jobs.running_job import RunningJobStatus
 from repositories.progress_repository import ProgressRepository
+from services.email_notification_service import email_notification_service
 
 
 def _render_result_summary(result):
@@ -73,6 +74,17 @@ def _render_job_status_body(job_id: str | None):
                 st.text(line)
 
     if job.status in {RunningJobStatus.PENDING, RunningJobStatus.RUNNING}:
+        notification_email = str((job.metadata or {}).get("notification_email") or "")
+        if notification_email and email_notification_service.is_configured:
+            st.info(
+                "Вы можете закрыть эту вкладку — обработка продолжится в фоне. "
+                f"Когда данные будут обработаны, уведомление придёт на {notification_email}."
+            )
+        elif notification_email:
+            st.warning(
+                "Вы можете закрыть эту вкладку — обработка продолжится в фоне. "
+                "Для отправки уведомления на email необходимо настроить SMTP."
+            )
         if st.button("Cancel job", key=f"cancel_job_{job.id}"):
             repository.cancel(job.id)
             st.rerun()

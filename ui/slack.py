@@ -26,7 +26,6 @@ def _render_active_job(project_id: str):
 
 def render_slack_tab(memory_repository: MemoryRepository):
     project_id = get_current_project_id()
-    st.header("Slack paste analysis")
 
     slack_text = st.text_area(
         "Paste Slack messages",
@@ -42,7 +41,7 @@ def render_slack_tab(memory_repository: MemoryRepository):
     if active_job:
         return
 
-    if st.button("Process Slack text"):
+    if st.button("Process Slack text", type="primary"):
         if not slack_text.strip():
             st.warning("Paste Slack messages first.")
             return

@@ -24,11 +24,20 @@ class KnowledgeExtractionJobService:
         metadata: dict[str, Any] | None = None,
         **kwargs,
     ) -> RunningJob:
+        job_metadata = dict(metadata or {})
+        try:
+            from ui_v2.auth import get_authenticated_email
+
+            notification_email = get_authenticated_email()
+            if notification_email:
+                job_metadata.setdefault("notification_email", notification_email)
+        except Exception:
+            pass
         return background_job_executor.submit(
             KNOWLEDGE_EXTRACTION_JOB,
             extraction_callable,
             *args,
-            metadata=metadata,
+            metadata=job_metadata,
             **kwargs,
         )
 

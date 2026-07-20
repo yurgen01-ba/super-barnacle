@@ -16,6 +16,7 @@ def inject_ui_v2_theme():
                 --pb-blue: #3B82F6;
                 --pb-green: #22C55E;
                 --pb-yellow: #F59E0B;
+                --pb-red: #FF4B4B;
             }
 
             .stApp {
@@ -115,8 +116,22 @@ def inject_ui_v2_theme():
             }
 
             div[data-testid="stButton"] button[kind="primary"] {
-                background-color: rgba(59,130,246,0.20) !important;
-                border-color: rgba(59,130,246,0.65) !important;
+                background-color: var(--pb-red) !important;
+                border-color: var(--pb-red) !important;
+                color: #FFFFFF !important;
+            }
+
+            [data-testid="stFormSubmitButton"] button[kind*="primary"] {
+                background: var(--pb-red) !important;
+                border-color: var(--pb-red) !important;
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+            }
+
+            div[data-testid="stButton"] button[kind="primary"]:hover,
+            [data-testid="stFormSubmitButton"] button[kind*="primary"]:hover {
+                background: #FF6262 !important;
+                border-color: #FF7777 !important;
                 color: #FFFFFF !important;
             }
 
@@ -335,6 +350,36 @@ def inject_ui_v2_theme():
                 border-bottom: 1px solid var(--pb-border);
             }
 
+            .pb-auth-heading {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 3rem 0 1.25rem;
+                text-align: center;
+            }
+
+            .pb-auth-heading h1,
+            .pb-auth-heading p {
+                margin: 0;
+            }
+
+            .pb-auth-separator {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin: 1rem 0;
+                color: var(--pb-muted);
+            }
+
+            .pb-auth-separator::before,
+            .pb-auth-separator::after {
+                content: "";
+                height: 1px;
+                flex: 1;
+                background: var(--pb-border);
+            }
+
             .pb-brand-mark {
                 display: flex;
                 width: 30px;
@@ -502,6 +547,12 @@ def inject_ui_v2_theme():
                 justify-content: space-between;
                 align-items: center;
                 gap: 1rem;
+            }
+
+            .pb-compact-divider {
+                height: 1px;
+                margin: 0.8rem 0 0.65rem;
+                background: rgba(255,255,255,0.08);
             }
 
             .pb-change-row {

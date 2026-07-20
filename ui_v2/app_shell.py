@@ -4,6 +4,7 @@ from memory.db import init_db
 from memory.fact_schema import init_fact_schema
 from repositories.memory_repository import MemoryRepository
 from ui_v2.design import inject_ui_v2_theme
+from ui_v2.auth import render_auth_gate
 from ui_v2.layout.chat import render_chat_panel
 from ui_v2.layout.menu import render_menu
 from ui_v2.layout.topbar import render_topbar
@@ -20,6 +21,9 @@ def render_app_shell_v2():
     )
 
     inject_ui_v2_theme()
+
+    if not render_auth_gate():
+        return
 
     init_db()
     init_fact_schema()

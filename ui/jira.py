@@ -1,27 +1,11 @@
-from pathlib import Path
-import tempfile
-
 import streamlit as st
 
 from jobs.extraction_tasks import process_jira_pdfs_job, process_jira_text_job
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
+from services.jira_archive_service import MAX_JIRA_PDFS, stage_jira_uploads
 from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
-
-
-def _stage_uploaded_files(uploaded_files, prefix: str) -> list[dict[str, str]]:
-    staged_dir = Path(tempfile.mkdtemp(prefix=prefix))
-    specs = []
-
-    for uploaded_file in uploaded_files:
-        safe_name = (uploaded_file.name or "uploaded_file").replace("/", "_").replace("\\", "_")
-        path = staged_dir / safe_name
-        path.write_bytes(uploaded_file.getbuffer())
-        specs.append({"name": safe_name, "path": str(path)})
-
-    return specs
-
 
 def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
@@ -49,7 +33,7 @@ def render_jira_tab(memory_repository: MemoryRepository):
     if active_job:
         return
 
-    if st.button("Process Jira text"):
+    if st.button("Process Jira text", type="primary"):
         if not jira_text.strip():
             st.warning("Paste Jira text first.")
         else:
@@ -64,16 +48,29 @@ def render_jira_tab(memory_repository: MemoryRepository):
             st.success("Jira text processing started in background.")
             st.rerun()
 
-    st.divider()
+    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
 
-    jira_pdfs = st.file_uploader("Upload Jira PDF exports", type=["pdf"], accept_multiple_files=True)
+    jira_pdfs = st.file_uploader(
+        f"Загрузите Jira PDF или архив ZIP/7z — до {MAX_JIRA_PDFS} PDF-файлов",
+        type=["pdf", "zip", "7z"],
+        accept_multiple_files=True,
+        help=(
+            "Можно выбрать отдельные PDF либо архив ZIP/7z. "
+            f"За один запуск обрабатывается не более {MAX_JIRA_PDFS} PDF-файлов."
+        ),
+    )
+    st.caption("Поддерживаются PDF, ZIP и 7z. В архивах учитываются только PDF; максимум 20 файлов.")
 
-    if st.button("Process Jira PDFs"):
+    if st.button("Обработать Jira-файлы", type="primary"):
         if not jira_pdfs:
-            st.warning("Upload at least one Jira PDF.")
+            st.warning("Загрузите хотя бы один PDF или архив ZIP/7z.")
             return
 
-        file_specs = _stage_uploaded_files(jira_pdfs, prefix="project_brain_jira_pdf_stage_")
+        try:
+            file_specs = stage_jira_uploads(jira_pdfs)
+        except ValueError as exc:
+            st.error(str(exc))
+            return
         service = KnowledgeExtractionJobService()
         job = service.start(
             process_jira_pdfs_job,
@@ -83,5 +80,5 @@ def render_jira_tab(memory_repository: MemoryRepository):
         )
 
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success("Jira PDF processing started in background.")
+        st.success(f"Обработка {len(file_specs)} Jira PDF запущена в фоне.")
         st.rerun()

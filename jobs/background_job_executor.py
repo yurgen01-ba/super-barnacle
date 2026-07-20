@@ -5,6 +5,7 @@ from typing import Callable, Any
 
 from jobs.running_job import RunningJob
 from jobs.running_job_store import running_job_store
+from services.email_notification_service import email_notification_service
 
 
 class BackgroundJobExecutor:
@@ -50,6 +51,14 @@ class BackgroundJobExecutor:
 
         except Exception as exc:
             job.mark_failed(exc)
+
+        try:
+            if email_notification_service.notify_job_finished(job):
+                job.logs.append("Email notification sent.")
+            elif (job.metadata or {}).get("notification_email"):
+                job.logs.append("Email notification skipped: SMTP is not configured.")
+        except Exception as exc:
+            job.logs.append(f"Email notification failed: {exc}")
 
         running_job_store.update(job)
 

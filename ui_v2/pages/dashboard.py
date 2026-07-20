@@ -116,5 +116,5 @@ def render_dashboard(memory_repository):
         _source_card("Jira", "Задачи, комментарии и статусы.", "dash_import_jira", "jira")
 
     if get_dashboard_loader() is not None:
-        with st.expander("Active data loader", expanded=True):
+        with st.container(border=True, key="dashboard_active_loader"):
             _render_dashboard_loader(memory_repository)
