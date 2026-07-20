@@ -171,6 +171,166 @@ def _speaker_runs(words: list[dict]) -> list[dict]:
     return runs
 
 
+def _sentence_spans(words: list[dict]) -> list[tuple[int, int]]:
+    """Return inclusive word spans for punctuation-delimited phrases."""
+    spans: list[tuple[int, int]] = []
+    start = 0
+
+    for index, word in enumerate(words):
+        # A punctuated short acknowledgement is a real utterance even when
+        # Whisper did not put punctuation on the preceding speaker's words.
+        if (
+            index > start
+            and word["normalized"] in SHORT_REPLY_WORDS
+            and _is_sentence_boundary(word["text"])
+            and word["speaker"] != words[index - 1]["speaker"]
+        ):
+            spans.append((start, index - 1))
+            spans.append((index, index))
+            start = index + 1
+        elif _is_sentence_boundary(word["text"]):
+            spans.append((start, index))
+            start = index + 1
+
+    if start < len(words):
+        spans.append((start, len(words) - 1))
+
+    return spans
+
+
+def _dominant_speaker_for_span(
+    words: list[dict],
+    start: int,
+    end: int,
+) -> tuple[str | None, float]:
+    weights: dict[str, float] = {}
+    total = 0.0
+
+    for index in range(start, end + 1):
+        word = words[index]
+        speaker = str(word["speaker"])
+        duration = max(0.05, min(2.0, word["end"] - word["start"]))
+        weights[speaker] = weights.get(speaker, 0.0) + duration
+        total += duration
+
+    if not weights or total <= 0:
+        return None, 0.0
+
+    speaker, weight = max(weights.items(), key=lambda item: item[1])
+    return speaker, weight / total
+
+
+def stabilize_sentence_speakers(
+    words: list[dict],
+    max_noise_words: int = 2,
+    max_noise_seconds: float = 1.35,
+    min_dominance: float = 0.60,
+    context_gap_seconds: float = 1.5,
+) -> tuple[list[dict], list[dict]]:
+    """Remove word-level speaker flips without erasing real short replies.
+
+    Pyannote boundaries and Whisper word timestamps have independent timing
+    errors. A boundary can therefore land on the first or last word of a
+    phrase. We first bridge short A-B-A islands, then use adjacent sentence
+    context and duration-weighted consensus for short edge fragments.
+    """
+    adjustments: list[dict] = []
+    spans = _sentence_spans(words)
+
+    for span_index, (start, end) in enumerate(spans):
+        if start >= end:
+            continue
+
+        # Recompute until all short A-B-A islands inside the phrase are gone.
+        changed = True
+        while changed:
+            changed = False
+            runs = [
+                run
+                for run in _speaker_runs(words[start:end + 1])
+            ]
+            for run_index in range(1, len(runs) - 1):
+                previous = runs[run_index - 1]
+                current = runs[run_index]
+                following = runs[run_index + 1]
+                duration = current["end"] - current["start"]
+                if (
+                    previous["speaker"] == following["speaker"]
+                    and current["speaker"] != previous["speaker"]
+                    and current["word_count"] <= max_noise_words
+                    and duration <= max_noise_seconds
+                ):
+                    absolute_start = start + current["start_index"]
+                    absolute_end = start + current["end_index"]
+                    for index in range(absolute_start, absolute_end + 1):
+                        words[index]["speaker"] = previous["speaker"]
+                    adjustments.append({
+                        "from_word_index": absolute_start,
+                        "through_word_index": absolute_end,
+                        "final_speaker": str(previous["speaker"]),
+                        "reason": "bridge_short_speaker_island",
+                    })
+                    changed = True
+                    break
+
+        local_runs = _speaker_runs(words[start:end + 1])
+        if len(local_runs) != 2:
+            continue
+
+        first, last = local_runs
+        last_duration = last["end"] - last["start"]
+
+        # If the last tiny fragment already has the speaker of the next
+        # phrase, the acoustic boundary probably arrived one word too early.
+        if span_index + 1 < len(spans):
+            next_start, next_end = spans[span_index + 1]
+            next_speaker, _ = _dominant_speaker_for_span(
+                words, next_start, next_end
+            )
+            next_gap = max(0.0, words[next_start]["start"] - words[end]["end"])
+            if (
+                next_speaker == last["speaker"]
+                and first["speaker"] != last["speaker"]
+                and last["word_count"] <= max_noise_words
+                and last_duration <= max_noise_seconds
+                and next_gap <= context_gap_seconds
+            ):
+                absolute_start = start + last["start_index"]
+                for index in range(absolute_start, end + 1):
+                    words[index]["speaker"] = first["speaker"]
+                adjustments.append({
+                    "from_word_index": absolute_start,
+                    "through_word_index": end,
+                    "final_speaker": str(first["speaker"]),
+                    "reason": "delay_boundary_to_sentence_end",
+                })
+                continue
+
+        dominant_speaker, dominance = _dominant_speaker_for_span(words, start, end)
+        if dominant_speaker is None or dominance < min_dominance:
+            continue
+
+        minority = first if first["speaker"] != dominant_speaker else last
+        minority_duration = minority["end"] - minority["start"]
+        if (
+            minority["word_count"] <= max_noise_words
+            and minority_duration <= max_noise_seconds
+        ):
+            absolute_start = start + minority["start_index"]
+            absolute_end = start + minority["end_index"]
+            for index in range(absolute_start, absolute_end + 1):
+                words[index]["speaker"] = dominant_speaker
+            adjustments.append({
+                "from_word_index": absolute_start,
+                "through_word_index": absolute_end,
+                "final_speaker": str(dominant_speaker),
+                "dominance": round(dominance, 3),
+                "reason": "sentence_speaker_consensus",
+            })
+
+    return words, adjustments
+
+
 def _protected_phrase_spans(
     words: list[dict],
 ) -> list[tuple[int, int, str]]:
@@ -528,8 +688,8 @@ def stabilize_speaker_utterances_with_debug(
     words = _flatten_words(segments)
     original_runs = _speaker_runs(words)
 
-    words, sentence_snap_adjustments = (
-        snap_mid_sentence_speaker_changes(words)
+    words, sentence_consensus_adjustments = (
+        stabilize_sentence_speakers(words)
     )
 
     validated_words, decisions = (
@@ -600,7 +760,8 @@ def stabilize_speaker_utterances_with_debug(
             asdict(item)
             for item in decisions
         ],
-        "sentence_snap_adjustments": sentence_snap_adjustments,
+        "sentence_snap_adjustments": sentence_consensus_adjustments,
+        "sentence_consensus_adjustments": sentence_consensus_adjustments,
         "original_runs": original_runs,
         "validated_runs": validated_runs,
     }

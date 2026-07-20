@@ -94,6 +94,61 @@ class SpeakerBoundaryTests(unittest.TestCase):
         self.assertEqual(utterances[1].speaker, "SPEAKER_01")
         self.assertEqual(utterances[1].text, "ага. Продолжим.")
 
+    def test_repairs_wrong_speaker_on_first_word_of_sentence(self):
+        source = segment(
+            WordTimestamp("Всё", 3.899, 5.120, speaker="SPEAKER_00"),
+            WordTimestamp("равно", 5.220, 6.100, speaker="SPEAKER_01"),
+            WordTimestamp("давай", 6.200, 7.000, speaker="SPEAKER_01"),
+            WordTimestamp("сделаем", 7.100, 8.200, speaker="SPEAKER_01"),
+            WordTimestamp("её.", 8.300, 9.000, speaker="SPEAKER_01"),
+        )
+
+        utterances, debug = stabilize_speaker_utterances_with_debug([source])
+
+        self.assertEqual(len(utterances), 1)
+        self.assertEqual(utterances[0].speaker, "SPEAKER_01")
+        self.assertEqual(utterances[0].text, "Всё равно давай сделаем её.")
+        self.assertEqual(
+            debug["sentence_consensus_adjustments"][0]["reason"],
+            "sentence_speaker_consensus",
+        )
+
+    def test_bridges_single_word_speaker_island(self):
+        source = segment(
+            WordTimestamp("Давай", 0.0, 0.5, speaker="SPEAKER_00"),
+            WordTimestamp("без", 0.5, 0.8, speaker="SPEAKER_00"),
+            WordTimestamp("этих", 0.8, 1.2, speaker="SPEAKER_01"),
+            WordTimestamp("тайтлов", 1.2, 1.8, speaker="SPEAKER_00"),
+            WordTimestamp("здесь.", 1.8, 2.4, speaker="SPEAKER_00"),
+        )
+
+        utterances, debug = stabilize_speaker_utterances_with_debug([source])
+
+        self.assertEqual(len(utterances), 1)
+        self.assertEqual(utterances[0].speaker, "SPEAKER_00")
+        self.assertIn(
+            "bridge_short_speaker_island",
+            [item["reason"] for item in debug["sentence_consensus_adjustments"]],
+        )
+
+    def test_delays_boundary_when_next_sentence_confirms_new_speaker(self):
+        source = segment(
+            WordTimestamp("Хочешь", 0.0, 0.4, speaker="SPEAKER_01"),
+            WordTimestamp("показать?", 0.4, 0.9, speaker="SPEAKER_00"),
+            WordTimestamp("Ну,", 0.95, 1.1, speaker="SPEAKER_00"),
+            WordTimestamp("смотри.", 1.1, 1.8, speaker="SPEAKER_00"),
+        )
+
+        utterances, debug = stabilize_speaker_utterances_with_debug([source])
+
+        self.assertEqual(utterances[0].speaker, "SPEAKER_01")
+        self.assertEqual(utterances[0].text, "Хочешь показать?")
+        self.assertEqual(utterances[1].speaker, "SPEAKER_00")
+        self.assertIn(
+            "delay_boundary_to_sentence_end",
+            [item["reason"] for item in debug["sentence_consensus_adjustments"]],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
