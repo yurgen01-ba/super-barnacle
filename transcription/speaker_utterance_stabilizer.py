@@ -18,6 +18,15 @@ PROTECTED_PHRASES = {
     "raw transcript",
 }
 
+SHORT_REPLY_WORDS = {
+    "ага",
+    "да",
+    "нет",
+    "угу",
+    "ок",
+    "okay",
+}
+
 
 @dataclass
 class SpeakerUtterance:
@@ -236,6 +245,76 @@ def _next_run_details(
     )
 
 
+def snap_mid_sentence_speaker_changes(
+    words: list[dict],
+    max_shift_words: int = 8,
+    max_shift_seconds: float = 4.0,
+) -> tuple[list[dict], list[dict]]:
+    """Move premature diarization boundaries to nearby sentence endings.
+
+    Word-level diarization often flips a speaker one or two words before the
+    acoustic turn boundary. We only move a boundary forward, never invent a
+    new speaker, and preserve punctuated short replies such as ``Да.``.
+    """
+    adjustments: list[dict] = []
+    index = 1
+
+    while index < len(words):
+        previous = words[index - 1]
+        current = words[index]
+        if current["speaker"] == previous["speaker"]:
+            index += 1
+            continue
+        if _is_sentence_boundary(previous["text"]):
+            index += 1
+            continue
+        if (
+            current["normalized"] in SHORT_REPLY_WORDS
+            and _is_sentence_boundary(current["text"])
+        ):
+            index += 1
+            continue
+
+        proposed_speaker = current["speaker"]
+        previous_speaker = previous["speaker"]
+        run_end = index
+        while (
+            run_end + 1 < len(words)
+            and words[run_end + 1]["speaker"] == proposed_speaker
+        ):
+            run_end += 1
+
+        punctuation_index = None
+        upper = min(run_end, index + max_shift_words - 1)
+        for candidate in range(index, upper + 1):
+            duration = words[candidate]["end"] - current["start"]
+            if duration > max_shift_seconds:
+                break
+            if _is_sentence_boundary(words[candidate]["text"]):
+                punctuation_index = candidate
+                break
+
+        if punctuation_index is None:
+            index += 1
+            continue
+
+        for candidate in range(index, punctuation_index + 1):
+            words[candidate]["speaker"] = previous_speaker
+
+        adjustments.append(
+            {
+                "from_word_index": index,
+                "through_word_index": punctuation_index,
+                "previous_speaker": str(previous_speaker),
+                "proposed_speaker": str(proposed_speaker),
+                "reason": "snap_to_sentence_boundary",
+            }
+        )
+        index = punctuation_index + 1
+
+    return words, adjustments
+
+
 def validate_speaker_boundaries(
     words: list[dict],
     hard_min_gap_seconds: float = 0.0,
@@ -449,6 +528,10 @@ def stabilize_speaker_utterances_with_debug(
     words = _flatten_words(segments)
     original_runs = _speaker_runs(words)
 
+    words, sentence_snap_adjustments = (
+        snap_mid_sentence_speaker_changes(words)
+    )
+
     validated_words, decisions = (
         validate_speaker_boundaries(
             words=words,
@@ -517,6 +600,7 @@ def stabilize_speaker_utterances_with_debug(
             asdict(item)
             for item in decisions
         ],
+        "sentence_snap_adjustments": sentence_snap_adjustments,
         "original_runs": original_runs,
         "validated_runs": validated_runs,
     }

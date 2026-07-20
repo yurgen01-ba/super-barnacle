@@ -51,6 +51,7 @@ COMMON_REPAIRS = {
     "стаск": "task",
     "аж блю": "as-is blue",
     "ajblue": "as-is blue",
+    "сигналы есть": "accounts",
 }
 
 

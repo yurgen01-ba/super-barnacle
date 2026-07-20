@@ -29,7 +29,9 @@ WHISPERX_INITIAL_PROMPT = os.getenv(
     (
         "Русская техническая встреча. Термины: Jira, Jira task, title, "
         "in scope of this task, info panel, summary, accounts, OrgMeter, "
-        "Confluence, white label, field scope."
+        "Confluence, white label, field scope. Пример фразы: «Давай без "
+        "этих titles in scope of this task. Берем отсюда summary, например "
+        "accounts»."
     ),
 )
 
@@ -40,6 +42,10 @@ WHISPERX_HOTWORDS = os.getenv(
         "summary, accounts, OrgMeter, Confluence, white label, field scope"
     ),
 )
+
+WHISPERX_VAD_ONSET = os.getenv("WHISPERX_VAD_ONSET", "0.35")
+
+WHISPERX_VAD_OFFSET = os.getenv("WHISPERX_VAD_OFFSET", "0.25")
 
 WHISPERX_ENABLE_ALIGNMENT = os.getenv("WHISPERX_ENABLE_ALIGNMENT", "true")
 

@@ -27,6 +27,12 @@ class DomainGlossaryTests(unittest.TestCase):
 
         self.assertEqual(repaired, "Jira task, summary и accounts")
 
+    def test_repairs_observed_accounts_misrecognition(self):
+        self.assertEqual(
+            apply_domain_glossary_repair("Ну, сигналы есть."),
+            "Ну, accounts.",
+        )
+
 
 class SpeakerBoundaryTests(unittest.TestCase):
     def test_preserves_one_word_reply_without_pause(self):
@@ -58,6 +64,35 @@ class SpeakerBoundaryTests(unittest.TestCase):
         self.assertEqual(len(utterances), 2)
         self.assertEqual(utterances[1].speaker, "SPEAKER_01")
         self.assertEqual(utterances[1].text, "Хочешь показать?")
+
+    def test_snaps_premature_change_to_question_boundary(self):
+        source = segment(
+            WordTimestamp("Хочешь", 0.0, 0.4, speaker="SPEAKER_01"),
+            WordTimestamp("показать?", 0.4, 0.9, speaker="SPEAKER_00"),
+            WordTimestamp("Ну,", 0.9, 1.1, speaker="SPEAKER_00"),
+            WordTimestamp("смотри.", 1.1, 1.8, speaker="SPEAKER_00"),
+        )
+
+        utterances, debug = stabilize_speaker_utterances_with_debug([source])
+
+        self.assertEqual(len(utterances), 2)
+        self.assertEqual(utterances[0].speaker, "SPEAKER_01")
+        self.assertEqual(utterances[0].text, "Хочешь показать?")
+        self.assertEqual(utterances[1].text, "Ну, смотри.")
+        self.assertEqual(len(debug["sentence_snap_adjustments"]), 1)
+
+    def test_preserves_punctuated_short_reply(self):
+        source = segment(
+            WordTimestamp("Это,", 0.0, 0.5, speaker="SPEAKER_00"),
+            WordTimestamp("ага.", 0.5, 0.8, speaker="SPEAKER_01"),
+            WordTimestamp("Продолжим.", 2.0, 2.8, speaker="SPEAKER_01"),
+        )
+
+        utterances, _ = stabilize_speaker_utterances_with_debug([source])
+
+        self.assertEqual(utterances[0].speaker, "SPEAKER_00")
+        self.assertEqual(utterances[1].speaker, "SPEAKER_01")
+        self.assertEqual(utterances[1].text, "ага. Продолжим.")
 
 
 if __name__ == "__main__":

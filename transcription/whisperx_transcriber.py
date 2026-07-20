@@ -18,6 +18,8 @@ from config import (
     WHISPERX_INITIAL_PROMPT,
     WHISPERX_LANGUAGE,
     WHISPERX_MODEL_NAME,
+    WHISPERX_VAD_OFFSET,
+    WHISPERX_VAD_ONSET,
 )
 from transcription.diarization_deep_diagnostics import DiarizationDiagnostics
 
@@ -55,6 +57,10 @@ class WhisperXTranscriber:
                 "hotwords": str(WHISPERX_HOTWORDS or "") or None,
                 "condition_on_previous_text": True,
                 "hallucination_silence_threshold": 1.5,
+            },
+            vad_options={
+                "vad_onset": float(WHISPERX_VAD_ONSET),
+                "vad_offset": float(WHISPERX_VAD_OFFSET),
             },
         )
 
