@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from html import escape
+
 import streamlit as st
 
 from repositories.workspace_repository import workspace_repository
@@ -37,25 +39,44 @@ def render_projects():
     current_id = get_current_project_id()
     st.subheader("Список проектов")
 
+    st.markdown(
+        """
+        <div class="pb-project-table">
+            <div class="pb-project-table-head">
+                <span>Проект</span><span>Источники</span><span>Артефакты</span>
+                <span>Знания</span><span>Действия</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     for project in projects:
         project_id = project["id"]
         metrics = workspace_repository.dashboard_metrics(project_id)
-        with st.container(border=True):
-            title_col, enter_col = st.columns([0.72, 0.28])
-            with title_col:
-                current_label = " · открыт" if project_id == current_id else ""
-                st.markdown(f"### {project['name']}{current_label}")
-                st.caption(
-                    f"Источников: {metrics['sources']} · "
-                    f"Артефактов: {metrics['artifacts']} · "
-                    f"Состояние знаний: {metrics['knowledge_health']}%"
+        with st.container(key=f"pb_project_row_{project_id}"):
+            name_col, sources_col, artifacts_col, knowledge_col, action_col = st.columns(
+                [2.2, 0.75, 0.75, 0.75, 1.0], vertical_alignment="center"
+            )
+            with name_col:
+                badge = '<span class="pb-current-badge">открыт</span>' if project_id == current_id else ""
+                st.markdown(
+                    f'<div class="pb-table-project-name">{escape(project["name"])}{badge}</div>',
+                    unsafe_allow_html=True,
                 )
-            with enter_col:
+            with sources_col:
+                st.markdown(f'<div class="pb-table-cell">{metrics["sources"]}</div>', unsafe_allow_html=True)
+            with artifacts_col:
+                st.markdown(f'<div class="pb-table-cell">{metrics["artifacts"]}</div>', unsafe_allow_html=True)
+            with knowledge_col:
+                st.markdown(f'<div class="pb-table-cell">{metrics["knowledge_health"]}%</div>', unsafe_allow_html=True)
+            with action_col:
                 if st.button(
-                    "Войти в проект",
+                    "Открыть" if project_id != current_id else "Открыт",
                     key=f"project_enter_{project_id}",
                     type="primary" if project_id != current_id else "secondary",
                     width="stretch",
+                    disabled=project_id == current_id,
                 ):
                     _enter_project(project_id)
                     st.rerun()

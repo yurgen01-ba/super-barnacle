@@ -93,10 +93,25 @@ def inject_ui_v2_theme():
 
             div[data-testid="stTextArea"] textarea,
             div[data-testid="stTextInput"] input,
-            div[data-testid="stSelectbox"] div[data-baseweb="select"] {
+            div[data-testid="stSelectbox"] div[data-baseweb="select"],
+            div[data-testid="stSelectbox"] [role="group"],
+            div[data-testid="stSelectbox"] input[role="combobox"] {
                 background: rgba(24,24,27,0.96) !important;
                 border-color: var(--pb-border) !important;
                 color: var(--pb-text) !important;
+            }
+
+            div[data-testid="stTextArea"] textarea::placeholder,
+            div[data-testid="stTextInput"] input::placeholder {
+                color: #A1A1AA !important;
+                opacity: 1 !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+            }
+
+            div[data-testid="stSelectbox"] button,
+            div[data-testid="stSelectbox"] svg {
+                color: #D4D4D8 !important;
+                fill: #D4D4D8 !important;
             }
 
             div[data-testid="stTabs"] button {
@@ -120,6 +135,18 @@ def inject_ui_v2_theme():
                 margin-bottom: 0.75rem;
             }
 
+            div[data-testid="stExpander"] details,
+            div[data-testid="stExpander"] summary,
+            details[data-testid="stExpander"] > summary {
+                background: #111318 !important;
+                color: var(--pb-text-2) !important;
+            }
+
+            div[data-testid="stExpander"] summary:hover {
+                background: #18181B !important;
+                color: #FFFFFF !important;
+            }
+
             div[data-testid="stFileUploader"] {
                 border: 1px dashed #3F3F46;
                 border-radius: 14px;
@@ -127,18 +154,34 @@ def inject_ui_v2_theme():
                 padding: 0.75rem;
             }
 
-            div[data-testid="stFileUploaderDropzone"],
-            div[data-testid="stFileUploaderDropzone"] > div,
+            [data-testid="stFileUploaderDropzone"],
+            [data-testid="stFileUploaderDropzone"] > div,
             div[data-testid="stFileUploader"] section {
                 background: #18181B !important;
                 color: var(--pb-text-2) !important;
                 border-color: #3F3F46 !important;
             }
 
-            div[data-testid="stFileUploaderDropzone"] button {
+            [data-testid="stFileUploaderDropzone"] button,
+            [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] {
                 background: #27272A !important;
                 border: 1px solid #3F3F46 !important;
                 color: #E4E4E7 !important;
+            }
+
+            [data-testid="stFileUploaderDropzone"] button *,
+            [data-testid="stFileUploaderDropzoneInstructions"],
+            [data-testid="stFileUploaderDropzoneInstructions"] * {
+                color: #D4D4D8 !important;
+                -webkit-text-fill-color: #D4D4D8 !important;
+            }
+
+            div[data-testid="stJson"],
+            div[data-testid="stJson"] > div,
+            div[data-testid="stJson"] pre,
+            div[data-testid="stJson"] .react-json-view {
+                background: #111318 !important;
+                color: #D4D4D8 !important;
             }
 
             div[data-baseweb="popover"],
@@ -164,6 +207,7 @@ def inject_ui_v2_theme():
 
             .st-key-pb_navigation div[data-testid="stButton"] button {
                 justify-content: flex-start !important;
+                text-align: left !important;
                 min-height: 2.35rem !important;
                 padding: 0.48rem 0.7rem !important;
                 border: 0 !important;
@@ -174,6 +218,14 @@ def inject_ui_v2_theme():
                 font-weight: 500 !important;
                 font-size: 0.82rem !important;
                 white-space: nowrap !important;
+            }
+
+            .st-key-pb_navigation div[data-testid="stButton"] button > div,
+            .st-key-pb_navigation div[data-testid="stButton"] button span,
+            .st-key-pb_navigation div[data-testid="stButton"] button p {
+                width: 100% !important;
+                justify-content: flex-start !important;
+                text-align: left !important;
             }
 
             .st-key-pb_navigation div[data-testid="stButton"] button:hover {
@@ -267,6 +319,94 @@ def inject_ui_v2_theme():
                 background: linear-gradient(180deg, rgba(17,19,24,0.96), rgba(13,17,23,0.96));
                 padding: 0.9rem 1rem;
                 margin-bottom: 1.3rem;
+            }
+
+            .st-key-pb_topbar {
+                border: 1px solid var(--pb-border);
+                border-radius: 16px;
+                background: linear-gradient(180deg, rgba(17,19,24,0.96), rgba(13,17,23,0.96));
+                padding: 0.75rem 1rem 0.45rem;
+                margin-bottom: 1.3rem;
+            }
+
+            .st-key-pb_topbar [data-testid="stSelectbox"] {
+                max-width: 420px;
+            }
+
+            .st-key-pb_topbar [data-testid="stWidgetLabel"] p {
+                color: var(--pb-muted) !important;
+                font-size: 0.78rem !important;
+                font-weight: 650 !important;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
+
+            .pb-project-table {
+                border: 1px solid var(--pb-border);
+                border-radius: 14px;
+                overflow: hidden;
+                margin-top: 0.65rem;
+            }
+
+            .pb-project-table-head {
+                display: grid;
+                grid-template-columns: 2.2fr 0.75fr 0.75fr 0.75fr 1fr;
+                gap: 0.75rem;
+                padding: 0.7rem 0.9rem;
+                background: #18181B;
+                border-bottom: 1px solid var(--pb-border);
+                color: var(--pb-muted);
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
+
+            @media (max-width: 1200px) {
+                .pb-project-table-head {
+                    gap: 0.35rem;
+                    padding-inline: 0.65rem;
+                    font-size: 0.61rem;
+                    letter-spacing: 0.02em;
+                }
+
+                [class*="st-key-pb_project_row_"] {
+                    padding-inline: 0.6rem;
+                }
+            }
+
+            [class*="st-key-pb_project_row_"] {
+                border: 1px solid var(--pb-border);
+                border-top: 0;
+                background: rgba(17,19,24,0.82);
+                padding: 0.55rem 0.85rem 0.35rem;
+            }
+
+            [class*="st-key-pb_project_row_"]:last-of-type {
+                border-radius: 0 0 14px 14px;
+            }
+
+            .pb-table-project-name {
+                color: #FAFAFA;
+                font-weight: 750;
+                line-height: 2.35rem;
+            }
+
+            .pb-table-cell {
+                color: #D4D4D8;
+                line-height: 2.35rem;
+            }
+
+            .pb-current-badge {
+                display: inline-flex;
+                margin-left: 0.45rem;
+                padding: 0.12rem 0.4rem;
+                border: 1px solid #52525B;
+                border-radius: 999px;
+                color: #A1A1AA;
+                font-size: 0.68rem;
+                font-weight: 650;
+                vertical-align: middle;
             }
 
             .pb-row {
