@@ -21,14 +21,14 @@ def _with_repo(fn):
 
 
 PROJECT_MODEL_TABS = [
-    {"label": "🚀 Refresh", "render": _no_repo(render_project_intelligence_tab)},
-    {"label": "📌 Summary", "render": _no_repo(render_project_summary_tab)},
-    {"label": "🏛️ Domain", "render": _no_repo(render_domain_model_tab)},
-    {"label": "👥 Actors", "render": _no_repo(render_actors_tab)},
-    {"label": "🗺️ Processes", "render": _no_repo(render_processes_tab)},
-    {"label": "🧬 Ontology", "render": _no_repo(render_ontology_tab)},
-    {"label": "🧠 Knowledge", "render": _with_repo(render_memory_tab)},
-    {"label": "🧩 Facts", "render": _no_repo(render_facts_tab)},
-    {"label": "🕸️ Entities", "render": _no_repo(render_entities_tab)},
-    {"label": "🔗 Relationships", "render": _no_repo(render_relationships_tab)},
+    {"label": "↻ Refresh", "render": _no_repo(render_project_intelligence_tab)},
+    {"label": "▣ Summary", "render": _no_repo(render_project_summary_tab)},
+    {"label": "◇ Domain", "render": _no_repo(render_domain_model_tab)},
+    {"label": "○ Actors", "render": _no_repo(render_actors_tab)},
+    {"label": "≋ Processes", "render": _no_repo(render_processes_tab)},
+    {"label": "⬡ Ontology", "render": _no_repo(render_ontology_tab)},
+    {"label": "◈ Knowledge", "render": _with_repo(render_memory_tab)},
+    {"label": "⌁ Facts", "render": _no_repo(render_facts_tab)},
+    {"label": "◎ Entities", "render": _no_repo(render_entities_tab)},
+    {"label": "— Relationships", "render": _no_repo(render_relationships_tab)},
 ]

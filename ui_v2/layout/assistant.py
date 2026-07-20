@@ -65,7 +65,7 @@ def render_assistant_panel():
         st.caption("Пока это entry-points. Подключим существующие генераторы следующим шагом.")
         st.button("🎫 Jira tickets", key="artifact_jira", width="stretch", disabled=True)
         st.button("📄 Confluence article", key="artifact_confluence", width="stretch", disabled=True)
-        st.button("🧪 Test cases", key="artifact_tests", width="stretch", disabled=True)
+        st.button("⌁ Test cases", key="artifact_tests", width="stretch", disabled=True)
         st.markdown(
             "<div class='pb-nonfunctional'>Disabled = UI placeholder, backend not connected yet.</div>",
             unsafe_allow_html=True,

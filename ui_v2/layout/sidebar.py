@@ -20,7 +20,7 @@ def _nav(label: str, icon: str, page: str):
 def render_sidebar():
     st.markdown("<div class='pb-left-menu'>", unsafe_allow_html=True)
 
-    st.markdown("<div class='pb-sidebar-brand'>🧠 Project Brain</div>", unsafe_allow_html=True)
+    st.markdown("<div class='pb-sidebar-brand'>◇ Project Brain</div>", unsafe_allow_html=True)
 
     _nav("Дашборд", "🏠", "dashboard")
 
@@ -47,7 +47,7 @@ def render_sidebar():
 
         st.button("👥 Участники", key="project_members", width="stretch", disabled=True)
 
-        if st.button("🧬 Модель проекта · Beta", key="project_model_beta", width="stretch"):
+        if st.button("⬡ Модель проекта · Beta", key="project_model_beta", width="stretch"):
             set_current_page("project_model")
             st.rerun()
 

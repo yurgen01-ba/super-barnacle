@@ -8,6 +8,8 @@ from ui_v2.pages.dashboard import render_dashboard
 from ui_v2.pages.project_model import render_project_model
 from ui_v2.pages.settings import render_settings
 from ui_v2.pages.sources import render_sources
+from ui_v2.pages.projects import render_projects
+from ui_v2.pages.exports import render_exports
 from ui_v2.state import get_current_page
 
 
@@ -17,6 +19,8 @@ PAGE_TITLES = {
     "artifacts": "Knowledge Artifacts",
     "project_model": "Project Model",
     "settings": "Settings",
+    "projects": "Projects",
+    "exports": "Data Export",
 }
 
 
@@ -35,6 +39,10 @@ def render_current_page(memory_repository):
         render_project_model(memory_repository)
     elif page == "settings":
         render_settings()
+    elif page == "projects":
+        render_projects()
+    elif page == "exports":
+        render_exports()
     else:
         st.warning(f"Unknown page: {page}. Opening Dashboard.")
         render_dashboard(memory_repository)

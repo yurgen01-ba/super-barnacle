@@ -67,10 +67,12 @@ class WorkspaceRepository:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        cur.execute(
-            "INSERT OR IGNORE INTO projects (id, name) VALUES (?, ?)",
-            (DEFAULT_PROJECT_ID, DEFAULT_PROJECT_NAME),
-        )
+        project_count = cur.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+        if not project_count:
+            cur.execute(
+                "INSERT INTO projects (id, name) VALUES (?, ?)",
+                (DEFAULT_PROJECT_ID, DEFAULT_PROJECT_NAME),
+            )
         for table in ("knowledge", "timeline", "documents"):
             columns = {
                 row[1] for row in cur.execute(f"PRAGMA table_info({table})").fetchall()
@@ -131,8 +133,8 @@ class WorkspaceRepository:
 
     def delete_project(self, project_id: str):
         projects = self.list_projects()
-        if project_id == DEFAULT_PROJECT_ID or len(projects) <= 1:
-            raise ValueError("The default or only project cannot be deleted")
+        if len(projects) <= 1:
+            raise ValueError("The only project cannot be deleted")
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(

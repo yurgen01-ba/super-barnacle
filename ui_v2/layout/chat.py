@@ -16,20 +16,20 @@ def _render_artifact_area(memory_repository):
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("📄 Confluence", key="ui_v2_artifact_confluence_btn", width="stretch"):
+        if st.button("▤ Confluence", key="ui_v2_artifact_confluence_btn", width="stretch"):
             set_chat_artifact("confluence")
             st.rerun()
 
-        if st.button("🎫 Jira", key="ui_v2_artifact_jira_btn", width="stretch"):
+        if st.button("▱ Jira", key="ui_v2_artifact_jira_btn", width="stretch"):
             set_chat_artifact("jira")
             st.rerun()
 
     with col2:
-        if st.button("🧪 Test cases", key="ui_v2_artifact_tests_btn", width="stretch"):
+        if st.button("⌁ Test cases", key="ui_v2_artifact_tests_btn", width="stretch"):
             set_chat_artifact("tests")
             st.rerun()
 
-        if st.button("📦 All artifacts", key="ui_v2_artifact_all_btn", width="stretch"):
+        if st.button("▣ All artifacts", key="ui_v2_artifact_all_btn", width="stretch"):
             set_chat_artifact("all")
             st.rerun()
 
@@ -65,16 +65,6 @@ def _render_artifact_area(memory_repository):
 
 
 def render_chat_panel(memory_repository=None):
-    st.markdown(
-        """
-        <div class="pb-panel">
-            <div class="pb-panel-title">AI Assistant</div>
-            <div class="pb-caption">Graph-first assistant. Старый RAG-контекст не используется.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     tab_chat, tab_artifacts = st.tabs(["Чат", "Артефакты"])
 
     with tab_chat:
@@ -107,7 +97,7 @@ def render_chat_panel(memory_repository=None):
             key="ui_v2_assistant_question",
         )
 
-        if st.button("➤ Отправить", key="ui_v2_send", width="stretch", type="primary") and question.strip():
+        if st.button("Отправить", key="ui_v2_send", width="stretch", type="primary") and question.strip():
             with st.spinner("Project Brain is reading Knowledge Graph..."):
                 answer = answer_project_question_over_graph(question)
             st.markdown(answer)

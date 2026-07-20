@@ -6,14 +6,15 @@ from ui.confluence import render_confluence_tab
 from ui.jira import render_jira_tab
 from ui.meetings import render_meetings_tab
 from ui.slack import render_slack_tab
+from ui.files import render_files_tab
 
 
 SOURCE_OPTIONS = {
-    "meetings": "🎥 Meetings",
-    "slack": "💬 Slack",
-    "confluence": "📚 Confluence",
-    "jira": "🎫 Jira",
-    "files": "📁 Files",
+    "meetings": "Встречи",
+    "slack": "Slack",
+    "confluence": "Confluence",
+    "jira": "Jira",
+    "files": "Файлы",
 }
 
 
@@ -27,7 +28,6 @@ def render_source_adapter(source_key: str, memory_repository):
     elif source_key == "jira":
         render_jira_tab(memory_repository)
     elif source_key == "files":
-        st.info("Files importer is not connected yet.")
-        st.button("Upload files", key="ui_v2_files_upload_placeholder", disabled=True)
+        render_files_tab(memory_repository)
     else:
         st.warning(f"Unknown source: {source_key}")

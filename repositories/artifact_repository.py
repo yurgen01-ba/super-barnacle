@@ -31,6 +31,24 @@ class ArtifactRepository:
     def count_by_project(self, project_id: str) -> int:
         with self._connect() as conn:
             return int(conn.execute("SELECT COUNT(*) FROM artifacts WHERE project_id=?", (project_id,)).fetchone()[0])
+    def list_by_project(self, project_id: str, limit: int = 1000) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM artifacts WHERE project_id=? ORDER BY created_at DESC LIMIT ?",
+                (project_id, limit),
+            ).fetchall()
+        keys=["id","extraction_id","project_id","artifact_type","title","description","content","format","status","created_at","metadata_json"]
+        result=[]
+        for row in rows:
+            item=dict(zip(keys,row)); item["metadata"]=json.loads(item.pop("metadata_json") or "{}"); result.append(item)
+        return result
+    def delete(self, artifact_id: str, project_id: str) -> bool:
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "DELETE FROM artifacts WHERE id=? AND project_id=?",
+                (artifact_id, project_id),
+            )
+            return cursor.rowcount > 0
     def delete_by_project(self, project_id: str):
         with self._connect() as conn:
             conn.execute("DELETE FROM artifacts WHERE project_id=?", (project_id,))

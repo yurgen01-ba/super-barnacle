@@ -60,6 +60,10 @@ def inject_ui_v2_theme():
                 color: var(--pb-green);
             }
 
+            div[data-testid="stMetric"] [data-testid="stMetricDelta"] svg {
+                display: none !important;
+            }
+
             div[data-testid="stButton"] button {
                 border-radius: 10px !important;
                 border: 1px solid var(--pb-border) !important;
@@ -121,6 +125,119 @@ def inject_ui_v2_theme():
                 border-radius: 14px;
                 background: rgba(24,24,27,0.55);
                 padding: 0.75rem;
+            }
+
+            div[data-testid="stFileUploaderDropzone"],
+            div[data-testid="stFileUploaderDropzone"] > div,
+            div[data-testid="stFileUploader"] section {
+                background: #18181B !important;
+                color: var(--pb-text-2) !important;
+                border-color: #3F3F46 !important;
+            }
+
+            div[data-testid="stFileUploaderDropzone"] button {
+                background: #27272A !important;
+                border: 1px solid #3F3F46 !important;
+                color: #E4E4E7 !important;
+            }
+
+            div[data-baseweb="popover"],
+            div[data-baseweb="menu"],
+            ul[role="listbox"] {
+                background: #18181B !important;
+                color: var(--pb-text) !important;
+            }
+
+            .st-key-pb_navigation {
+                margin-top: 0.75rem;
+            }
+
+            .st-key-pb_navigation [data-testid="stCaptionContainer"] {
+                margin: 1.15rem 0 0.35rem;
+                letter-spacing: 0.08em;
+                font-size: 0.68rem;
+            }
+
+            .st-key-pb_navigation div[data-testid="stButton"] {
+                margin: 0.05rem 0 !important;
+            }
+
+            .st-key-pb_navigation div[data-testid="stButton"] button {
+                justify-content: flex-start !important;
+                min-height: 2.35rem !important;
+                padding: 0.48rem 0.7rem !important;
+                border: 0 !important;
+                border-left: 2px solid transparent !important;
+                border-radius: 7px !important;
+                background: transparent !important;
+                color: #B8B8C0 !important;
+                font-weight: 500 !important;
+                font-size: 0.82rem !important;
+                white-space: nowrap !important;
+            }
+
+            .st-key-pb_navigation div[data-testid="stButton"] button:hover {
+                background: rgba(255,255,255,0.055) !important;
+                color: #FFFFFF !important;
+            }
+
+            .st-key-pb_navigation div[data-testid="stButton"] button[kind="primary"] {
+                border-left-color: #D4D4D8 !important;
+                background: rgba(255,255,255,0.075) !important;
+                color: #FFFFFF !important;
+            }
+
+            .pb-brand {
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                padding: 0.55rem 0.45rem 0.8rem;
+                border-bottom: 1px solid var(--pb-border);
+            }
+
+            .pb-brand-mark {
+                display: flex;
+                width: 30px;
+                height: 30px;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid #71717A;
+                border-radius: 7px;
+                color: #F4F4F5;
+                font-size: 0.72rem;
+                font-weight: 800;
+            }
+
+            .pb-brand-title {
+                color: #FAFAFA;
+                font-weight: 750;
+            }
+
+            .pb-current-project {
+                margin-top: 1.1rem;
+                padding: 0.75rem 0.7rem;
+                border-top: 1px solid var(--pb-border);
+            }
+
+            .pb-topbar-project {
+                margin-left: 0.6rem;
+                color: #FFFFFF;
+                font-weight: 700;
+            }
+
+            .pb-knowledge-indicator {
+                display: flex;
+                align-items: center;
+                gap: 0.65rem;
+            }
+
+            .pb-knowledge-value {
+                color: #F4F4F5;
+                border: 1px solid #52525B;
+                border-radius: 999px;
+                padding: 0.35rem 0.55rem;
+                font-size: 0.78rem;
+                font-weight: 700;
             }
 
             .pb-panel {

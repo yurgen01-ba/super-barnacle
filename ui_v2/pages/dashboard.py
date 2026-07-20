@@ -17,11 +17,11 @@ def _latest_changes(project_id: str):
         return
 
     icons = {
-        "source": "📥",
-        "extraction": "⚙️",
-        "artifact": "📦",
-        "settings": "⚙️",
-        "project": "🗂️",
+        "source": "▧",
+        "extraction": "◌",
+        "artifact": "▣",
+        "settings": "⚙︎",
+        "project": "◇",
     }
     for event in events:
         created_at = str(event.get("created_at") or "")
@@ -62,10 +62,10 @@ def _render_dashboard_loader(memory_repository):
         return
 
     title_by_loader = {
-        "meetings": "🎥 Meetings loader",
-        "slack": "💬 Slack importer",
-        "confluence": "📚 Confluence importer",
-        "jira": "🎫 Jira importer",
+        "meetings": "Meetings loader",
+        "slack": "Slack importer",
+        "confluence": "Confluence importer",
+        "jira": "Jira importer",
     }
 
     st.markdown(f"#### {title_by_loader.get(loader, 'Data loader')}")
@@ -116,15 +116,13 @@ def render_dashboard(memory_repository):
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        _source_card("🎥 Meetings", "Видео/аудио встреч, транскрипт, vision и facts.", "Открыть", "dash_upload_meeting", "meetings")
+        _source_card("Встречи", "Видео/аудио встреч, транскрипт, vision и facts.", "Открыть", "dash_upload_meeting", "meetings")
     with c2:
-        _source_card("💬 Slack", "Импорт сообщений и обсуждений.", "Открыть", "dash_import_slack", "slack")
+        _source_card("Slack", "Импорт сообщений и обсуждений.", "Открыть", "dash_import_slack", "slack")
     with c3:
-        _source_card("📚 Confluence", "Страницы, статьи и документация.", "Открыть", "dash_import_confluence", "confluence")
+        _source_card("Confluence", "Страницы, статьи и документация.", "Открыть", "dash_import_confluence", "confluence")
     with c4:
-        _source_card("🎫 Jira", "Задачи, комментарии и статусы.", "Открыть", "dash_import_jira", "jira")
+        _source_card("Jira", "Задачи, комментарии и статусы.", "Открыть", "dash_import_jira", "jira")
 
     with st.expander("Active data loader", expanded=get_dashboard_loader() is not None):
         _render_dashboard_loader(memory_repository)
-
-    st.caption("✅ Последняя синхронизация: 2 мин назад")

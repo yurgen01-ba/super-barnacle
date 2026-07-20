@@ -14,7 +14,7 @@ from ui_v2.state import get_current_project_id
 def render_app_shell_v2():
     st.set_page_config(
         page_title="Project Brain",
-        page_icon="🧠",
+        page_icon="◇",
         layout="wide",
         initial_sidebar_state="collapsed",
     )
@@ -26,7 +26,7 @@ def render_app_shell_v2():
 
     memory_repository = MemoryRepository(project_id=get_current_project_id())
 
-    menu_col, main_col, chat_col = st.columns([0.16, 0.60, 0.24], gap="large")
+    menu_col, main_col, chat_col = st.columns([0.18, 0.58, 0.24], gap="large")
 
     with menu_col:
         render_menu()

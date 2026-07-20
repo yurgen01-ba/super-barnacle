@@ -24,7 +24,8 @@ def get_current_project_id() -> str:
     project_id = st.session_state.ui_v2_project
     from repositories.workspace_repository import workspace_repository
     if not workspace_repository.get_project(project_id):
-        project_id = DEFAULT_PROJECT
+        projects = workspace_repository.list_projects()
+        project_id = projects[0]["id"] if projects else DEFAULT_PROJECT
         st.session_state.ui_v2_project = project_id
     return project_id
 

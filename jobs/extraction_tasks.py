@@ -7,8 +7,9 @@ from typing import Any
 from extractors.confluence import process_confluence_text
 from extractors.jira import process_jira_text
 from extractors.jira_pdf import process_jira_pdfs
-from extractors.meeting import process_meeting_video
+from extractors.meeting import extract_transcript_knowledge, process_meeting_video
 from extractors.slack import process_slack_text
+from extractors.files import extract_file_text
 from jobs.running_job import RunningJob
 from jobs.segment_persistence import make_transcript_segment_callback
 from jobs.extraction_artifact_integration import create_meeting_extraction_artifacts
@@ -16,6 +17,8 @@ from progress.job_progress import JobProgress
 from repositories.memory_repository import MemoryRepository
 from repositories.source_repository import SourceRepository
 from repositories.workspace_repository import workspace_repository
+from services.artifact_service import artifact_service
+from utils.text import chunk_text
 
 
 class StagedUploadedFile:
@@ -237,6 +240,129 @@ def process_jira_pdfs_job(file_specs: list[dict[str, str]], project_id: str = "d
     if progress:
         progress.update(1.0, "completed", "Jira PDF extraction completed")
     return {"files_count": len(file_specs), "results": saved_results}
+
+
+def process_files_job(
+    file_specs: list[dict[str, str]],
+    project_id: str = "default",
+    job: RunningJob | None = None,
+) -> dict[str, Any]:
+    progress = JobProgress(job) if job else None
+    results = []
+    extraction = artifact_service.start_extraction(
+        source_id=",".join(spec["name"] for spec in file_specs),
+        source_name=", ".join(spec["name"] for spec in file_specs),
+        source_type="uploaded_files",
+        project_id=project_id,
+    )
+    total = max(len(file_specs), 1)
+    settings = workspace_repository.get_settings(project_id)
+
+    for index, spec in enumerate(file_specs, start=1):
+        if progress:
+            progress.update(
+                (index - 1) / total,
+                "files:extract",
+                f"Reading file {index}/{total}: {spec['name']}",
+            )
+        try:
+            text = extract_file_text(spec["path"])
+            if not text.strip():
+                raise ValueError("No readable text found")
+            source_result = _save_source(
+                spec["name"],
+                f"file:{Path(spec['name']).suffix.lower().lstrip('.')}",
+                spec["name"],
+                text,
+                project_id,
+            )
+            chunks = chunk_text(text, max_chars=8000, overlap_chars=500)
+            knowledge_items = []
+            knowledge_errors = []
+            for chunk_index, chunk in enumerate(chunks, start=1):
+                try:
+                    knowledge_items.extend(extract_transcript_knowledge(
+                        chunk,
+                        source=f"file:{spec['name']}:chunk_{chunk_index}",
+                        provider=settings.get("transcript_extractor_provider", "ollama"),
+                        model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+                        host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+                        timeout_seconds=int(settings.get("transcript_extractor_timeout_seconds", 180)),
+                    ))
+                except Exception as exc:
+                    knowledge_errors.append(
+                        f"Chunk {chunk_index}: {type(exc).__name__}: {exc}"
+                    )
+            knowledge = {
+                "title": spec["name"],
+                "chunks_count": len(chunks),
+                "items": knowledge_items,
+                "errors": knowledge_errors,
+            }
+            save_result = _save_items(
+                knowledge.get("items", []),
+                default_source=f"file:{spec['name']}",
+                project_id=project_id,
+            )
+            artifact_service.save_artifact(
+                extraction_id=extraction.id,
+                project_id=project_id,
+                artifact_type="source_text",
+                title=f"Извлечённый текст — {spec['name']}",
+                content=text,
+                description="Текст, извлечённый из загруженного файла.",
+                format="markdown" if Path(spec["name"]).suffix.lower() == ".md" else "text",
+                metadata={"file_name": spec["name"], "source": source_result},
+            )
+            artifact_service.save_artifact(
+                extraction_id=extraction.id,
+                project_id=project_id,
+                artifact_type="knowledge",
+                title=f"Извлечённые знания — {spec['name']}",
+                content=json.dumps(knowledge, ensure_ascii=False, indent=2, default=str),
+                description="Структурированные знания, полученные из файла.",
+                format="json",
+                metadata={"file_name": spec["name"], "save_result": save_result},
+            )
+            results.append({
+                "file_name": spec["name"],
+                "status": "completed",
+                "text_length": len(text),
+                "knowledge_items": len(knowledge.get("items", [])),
+                "errors": knowledge.get("errors", []),
+            })
+        except Exception as exc:
+            results.append({
+                "file_name": spec["name"],
+                "status": "failed",
+                "error": f"{type(exc).__name__}: {exc}",
+            })
+
+    extraction = artifact_service.complete_extraction(
+        extraction,
+        statistics={
+            "files": len(file_specs),
+            "completed": sum(item["status"] == "completed" for item in results),
+            "failed": sum(item["status"] == "failed" for item in results),
+        },
+    )
+    workspace_repository.log_event(
+        project_id,
+        "artifact",
+        "Обработаны загруженные файлы",
+        {
+            "extraction_id": extraction.id,
+            "results": results,
+            "logs": list(job.logs) if job else [],
+        },
+    )
+    if progress:
+        progress.update(1.0, "completed", "File processing completed. Artifacts are ready.")
+    return {
+        "files_count": len(file_specs),
+        "results": results,
+        "extraction": extraction.to_dict(),
+    }
 
 
 def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[str, Any], project_id: str = "default", job: RunningJob | None = None) -> dict[str, Any]:
