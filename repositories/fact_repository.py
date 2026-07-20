@@ -7,7 +7,8 @@ from memory.fact_schema import init_fact_schema
 
 
 class FactRepository:
-    def __init__(self):
+    def __init__(self, project_id: str = "default"):
+        self.project_id = project_id
         init_fact_schema()
 
     def save_fact(self, fact: dict | CanonicalFact) -> int | None:
@@ -39,9 +40,10 @@ class FactRepository:
                 status,
                 evidence,
                 source,
-                metadata_json
+                metadata_json,
+                project_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 data["subject"],
@@ -53,6 +55,7 @@ class FactRepository:
                 data.get("evidence"),
                 data.get("source"),
                 json.dumps(data.get("metadata") or {}, ensure_ascii=False),
+                self.project_id,
             ),
         )
 
@@ -111,21 +114,22 @@ class FactRepository:
                 """
                 SELECT *
                 FROM facts
-                WHERE fact_type = ?
+                WHERE fact_type = ? AND project_id = ?
                 ORDER BY created_at DESC
                 LIMIT ?
                 """,
-                (fact_type, limit),
+                (fact_type, self.project_id, limit),
             )
         else:
             cur.execute(
                 """
                 SELECT *
                 FROM facts
+                WHERE project_id = ?
                 ORDER BY created_at DESC
                 LIMIT ?
                 """,
-                (limit,),
+                (self.project_id, limit),
             )
 
         rows = cur.fetchall()
@@ -157,11 +161,11 @@ class FactRepository:
             f"""
             SELECT *
             FROM facts
-            WHERE {where}
+            WHERE project_id = ? AND ({where})
             ORDER BY confidence DESC, updated_at DESC
             LIMIT ?
             """,
-            params + [limit],
+            [self.project_id] + params + [limit],
         )
 
         rows = cur.fetchall()
@@ -177,9 +181,11 @@ class FactRepository:
             """
             SELECT fact_type, COUNT(*) AS count
             FROM facts
+            WHERE project_id = ?
             GROUP BY fact_type
             ORDER BY count DESC
-            """
+            """,
+            (self.project_id,),
         )
 
         rows = cur.fetchall()
@@ -198,9 +204,10 @@ class FactRepository:
             WHERE LOWER(subject) = LOWER(?)
               AND LOWER(predicate) = LOWER(?)
               AND LOWER(object) = LOWER(?)
+              AND project_id = ?
             LIMIT 1
             """,
-            (data["subject"], data["predicate"], data["object"]),
+            (data["subject"], data["predicate"], data["object"], self.project_id),
         )
 
         row = cur.fetchone()

@@ -4,18 +4,19 @@ from jobs.extraction_tasks import process_confluence_article_job
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
 from ui.job_status import render_job_status
+from ui_v2.state import get_current_project_id
 
 
-def _render_active_job():
+def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
-    active_job = service.latest(active_only=True)
+    active_job = service.latest(active_only=True, project_id=project_id)
 
     if active_job:
         st.info("Knowledge extraction is running in background. You can switch tabs and return later.")
         render_job_status(active_job.id)
         return active_job
 
-    latest_job = service.latest(active_only=False)
+    latest_job = service.latest(active_only=False, project_id=project_id)
     if latest_job:
         render_job_status(latest_job.id)
 
@@ -23,6 +24,7 @@ def _render_active_job():
 
 
 def render_confluence_tab(memory_repository: MemoryRepository):
+    project_id = get_current_project_id()
     st.header("Confluence Articles")
     st.caption("Paste Confluence article text or exported page text and extract Project Memory items.")
 
@@ -34,7 +36,7 @@ def render_confluence_tab(memory_repository: MemoryRepository):
         key="confluence_ingest_article_text",
     )
 
-    active_job = _render_active_job()
+    active_job = _render_active_job(project_id)
     if active_job:
         return
 
@@ -49,7 +51,8 @@ def render_confluence_tab(memory_repository: MemoryRepository):
             process_confluence_article_job,
             text=confluence_text,
             title=title,
-            metadata={"source": "confluence", "title": title},
+            project_id=project_id,
+            metadata={"source": "confluence", "title": title, "project_id": project_id},
         )
 
         st.session_state["latest_knowledge_extraction_job_id"] = job.id

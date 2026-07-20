@@ -28,5 +28,11 @@ class ArtifactRepository:
         for row in rows:
             d=dict(zip(keys,row)); d["metadata"]=json.loads(d.pop("metadata_json") or "{}"); result.append(d)
         return result
+    def count_by_project(self, project_id: str) -> int:
+        with self._connect() as conn:
+            return int(conn.execute("SELECT COUNT(*) FROM artifacts WHERE project_id=?", (project_id,)).fetchone()[0])
+    def delete_by_project(self, project_id: str):
+        with self._connect() as conn:
+            conn.execute("DELETE FROM artifacts WHERE project_id=?", (project_id,))
 
 artifact_repository = ArtifactRepository()

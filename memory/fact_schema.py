@@ -27,6 +27,14 @@ def init_fact_schema():
     cur.execute("CREATE INDEX IF NOT EXISTS idx_facts_predicate ON facts(predicate)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_facts_type ON facts(fact_type)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_facts_source ON facts(source)")
+    fact_columns = {
+        row[1] for row in cur.execute("PRAGMA table_info(facts)").fetchall()
+    }
+    if "project_id" not in fact_columns:
+        cur.execute(
+            "ALTER TABLE facts ADD COLUMN project_id TEXT NOT NULL DEFAULT 'default'"
+        )
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_facts_project ON facts(project_id)")
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS fact_evidence (

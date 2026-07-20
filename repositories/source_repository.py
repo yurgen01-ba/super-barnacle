@@ -18,6 +18,7 @@ class SourceRepository:
         text: str,
         source_ref: str | None = None,
         max_chunk_chars: int = 10000,
+        project_id: str = "default",
     ):
         text = text or ""
         chunks = chunk_text(text, max_chars=max_chunk_chars) if text.strip() else []
@@ -27,10 +28,10 @@ class SourceRepository:
 
         cur.execute(
             """
-            INSERT INTO documents (name, source_type, source_ref, text_length)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO documents (name, source_type, source_ref, text_length, project_id)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (name, source_type, source_ref, len(text)),
+            (name, source_type, source_ref, len(text), project_id),
         )
 
         document_id = cur.lastrowid
@@ -53,7 +54,7 @@ class SourceRepository:
             "text_length": len(text),
         }
 
-    def list_documents(self):
+    def list_documents(self, project_id: str = "default"):
         conn = get_connection()
         cur = conn.cursor()
 
@@ -63,9 +64,10 @@ class SourceRepository:
                 COUNT(c.id) AS chunks_count
             FROM documents d
             LEFT JOIN chunks c ON c.document_id = d.id
+            WHERE d.project_id = ?
             GROUP BY d.id
             ORDER BY d.created_at DESC
-        """)
+        """, (project_id,))
 
         rows = cur.fetchall()
         conn.close()
@@ -111,11 +113,11 @@ class SourceRepository:
 
         return [dict(row) for row in rows]
 
-    def clear(self):
+    def clear(self, project_id: str = "default"):
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("DELETE FROM chunks")
-        cur.execute("DELETE FROM documents")
+        cur.execute("DELETE FROM chunks WHERE document_id IN (SELECT id FROM documents WHERE project_id = ?)", (project_id,))
+        cur.execute("DELETE FROM documents WHERE project_id = ?", (project_id,))
         conn.commit()
         conn.close()
 

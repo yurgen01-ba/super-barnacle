@@ -8,11 +8,12 @@ class FactBuilder:
         model: str = "qwen2.5:7b",
         host: str = "http://localhost:11434",
         timeout_seconds: int = 240,
+        project_id: str = "default",
     ):
         self.model = model
         self.host = host
         self.timeout_seconds = timeout_seconds
-        self.fact_repository = FactRepository()
+        self.fact_repository = FactRepository(project_id=project_id)
 
     def extract_facts(
         self,

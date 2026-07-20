@@ -15,6 +15,7 @@ from jobs.extraction_artifact_integration import create_meeting_extraction_artif
 from progress.job_progress import JobProgress
 from repositories.memory_repository import MemoryRepository
 from repositories.source_repository import SourceRepository
+from repositories.workspace_repository import workspace_repository
 
 
 class StagedUploadedFile:
@@ -36,14 +37,27 @@ class StagedPdfFile(BytesIO):
         super().__init__(Path(path).read_bytes())
 
 
-def _save_items(items: list[dict], default_source: str) -> dict[str, Any]:
-    memory_repository = MemoryRepository()
+def _save_items(items: list[dict], default_source: str, project_id: str = "default") -> dict[str, Any]:
+    memory_repository = MemoryRepository(project_id=project_id)
     saved, skipped, errors = memory_repository.save_items(items, default_source=default_source)
     return {"saved": saved, "skipped": skipped, "errors": errors, "items_count": len(items)}
 
 
-def _save_source(name: str, source_type: str, source_ref: str, text: str) -> dict[str, Any]:
-    return SourceRepository().save_document(name=name, source_type=source_type, source_ref=source_ref, text=text)
+def _save_source(name: str, source_type: str, source_ref: str, text: str, project_id: str = "default") -> dict[str, Any]:
+    result = SourceRepository().save_document(
+        name=name,
+        source_type=source_type,
+        source_ref=source_ref,
+        text=text,
+        project_id=project_id,
+    )
+    workspace_repository.log_event(
+        project_id,
+        "source",
+        f"Добавлен источник: {name}",
+        {"source_type": source_type, "source_ref": source_ref, **result},
+    )
+    return result
 
 
 def _progress_between(base: float, span: float, local_progress: float) -> float:
@@ -61,10 +75,10 @@ def _event_text(event: dict, default: str) -> str:
     return default
 
 
-def _make_meeting_progress_callbacks(progress: JobProgress, file_name: str, file_index: int, files_total: int, source: str):
+def _make_meeting_progress_callbacks(progress: JobProgress, file_name: str, file_index: int, files_total: int, source: str, project_id: str = "default"):
     file_base = (file_index - 1) / max(files_total, 1)
     file_span = 1 / max(files_total, 1)
-    save_segment_callback = make_transcript_segment_callback(file_name=file_name, source=source)
+    save_segment_callback = make_transcript_segment_callback(file_name=file_name, source=source, project_id=project_id)
 
     def update(local_progress: float, stage: str, message: str):
         progress.update(
@@ -159,55 +173,55 @@ def _make_meeting_progress_callbacks(progress: JobProgress, file_name: str, file
     return audio_callback, vision_callback, fact_callback
 
 
-def process_slack_text_job(text: str, chunk_size: int = 12, job: RunningJob | None = None) -> dict[str, Any]:
+def process_slack_text_job(text: str, chunk_size: int = 12, project_id: str = "default", job: RunningJob | None = None) -> dict[str, Any]:
     progress = JobProgress(job) if job else None
     if progress:
         progress.update(0.05, "source", "Saving Slack source document")
-    source_save_result = _save_source("Slack paste", "slack", "manual_paste", text)
+    source_save_result = _save_source("Slack paste", "slack", "manual_paste", text, project_id)
     if progress:
         progress.update(0.25, "extraction", "Extracting Slack knowledge")
     result = process_slack_text(text, chunk_size=chunk_size)
     if progress:
         progress.update(0.75, "memory", "Saving Slack knowledge")
-    save_result = _save_items(result.get("items", []), default_source="slack_paste")
+    save_result = _save_items(result.get("items", []), default_source="slack_paste", project_id=project_id)
     if progress:
         progress.update(1.0, "completed", "Slack extraction completed")
     return {"source": source_save_result, "result": result, "save_result": save_result}
 
 
-def process_jira_text_job(text: str, job: RunningJob | None = None) -> dict[str, Any]:
+def process_jira_text_job(text: str, project_id: str = "default", job: RunningJob | None = None) -> dict[str, Any]:
     progress = JobProgress(job) if job else None
     if progress:
         progress.update(0.05, "source", "Saving Jira source document")
-    source_save_result = _save_source("Jira text paste", "jira_text", "manual_paste", text)
+    source_save_result = _save_source("Jira text paste", "jira_text", "manual_paste", text, project_id)
     if progress:
         progress.update(0.25, "extraction", "Extracting Jira knowledge")
     result = process_jira_text(text)
     if progress:
         progress.update(0.75, "memory", "Saving Jira knowledge")
-    save_result = _save_items(result.get("items", []), default_source="jira_text")
+    save_result = _save_items(result.get("items", []), default_source="jira_text", project_id=project_id)
     if progress:
         progress.update(1.0, "completed", "Jira text extraction completed")
     return {"source": source_save_result, "result": result, "save_result": save_result}
 
 
-def process_confluence_article_job(text: str, title: str = "Confluence article", job: RunningJob | None = None) -> dict[str, Any]:
+def process_confluence_article_job(text: str, title: str = "Confluence article", project_id: str = "default", job: RunningJob | None = None) -> dict[str, Any]:
     progress = JobProgress(job) if job else None
     if progress:
         progress.update(0.05, "source", "Saving Confluence source document")
-    source_save_result = _save_source(title, "confluence", title, text)
+    source_save_result = _save_source(title, "confluence", title, text, project_id)
     if progress:
         progress.update(0.25, "extraction", "Extracting Confluence knowledge")
     result = process_confluence_text(text=text, title=title)
     if progress:
         progress.update(0.75, "memory", "Saving Confluence knowledge")
-    save_result = _save_items(result.get("items", []), default_source=f"confluence:{title}")
+    save_result = _save_items(result.get("items", []), default_source=f"confluence:{title}", project_id=project_id)
     if progress:
         progress.update(1.0, "completed", "Confluence extraction completed")
     return {"source": source_save_result, "result": result, "save_result": save_result}
 
 
-def process_jira_pdfs_job(file_specs: list[dict[str, str]], job: RunningJob | None = None) -> dict[str, Any]:
+def process_jira_pdfs_job(file_specs: list[dict[str, str]], project_id: str = "default", job: RunningJob | None = None) -> dict[str, Any]:
     progress = JobProgress(job) if job else None
     pdf_files = [StagedPdfFile(path=spec["path"], name=spec["name"]) for spec in file_specs]
     if progress:
@@ -217,15 +231,15 @@ def process_jira_pdfs_job(file_specs: list[dict[str, str]], job: RunningJob | No
     for index, result in enumerate(results, start=1):
         if progress:
             progress.update(min(0.15 + index / max(len(results), 1) * 0.7, 0.85), "memory", f"Saving Jira PDF knowledge: {result.get('file_name')}")
-        source_save_result = _save_source(result["file_name"], "jira_pdf", result["file_name"], result.get("text", ""))
-        save_result = _save_items(result.get("items", []), default_source=f"jira_pdf:{result['file_name']}")
+        source_save_result = _save_source(result["file_name"], "jira_pdf", result["file_name"], result.get("text", ""), project_id)
+        save_result = _save_items(result.get("items", []), default_source=f"jira_pdf:{result['file_name']}", project_id=project_id)
         saved_results.append({"source": source_save_result, "result": result, "save_result": save_result})
     if progress:
         progress.update(1.0, "completed", "Jira PDF extraction completed")
     return {"files_count": len(file_specs), "results": saved_results}
 
 
-def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[str, Any], job: RunningJob | None = None) -> dict[str, Any]:
+def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[str, Any], project_id: str = "default", job: RunningJob | None = None) -> dict[str, Any]:
     progress = JobProgress(job) if job else None
     results = []
     total = max(len(file_specs), 1)
@@ -245,22 +259,28 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
                 file_index=index,
                 files_total=total,
                 source=source,
+                project_id=project_id,
             )
             runtime_settings["audio_progress_callback"] = audio_callback
             runtime_settings["vision_progress_callback"] = vision_callback
             runtime_settings["fact_progress_callback"] = fact_callback
 
-        result = process_meeting_video(uploaded_file, source=source, **runtime_settings)
+        result = process_meeting_video(
+            uploaded_file,
+            source=source,
+            project_id=project_id,
+            **runtime_settings,
+        )
 
         if progress:
             progress.update(_progress_between((index - 1) / total, 1 / total, 0.90), "meeting:saving", f"{spec['name']}: saving full transcript and extracted knowledge")
 
-        source_save_result = _save_source(spec["name"], "meeting_video_transcript", spec["name"], result.get("transcript", ""))
-        transcript_save_result = _save_items(result.get("transcript_items", []), default_source=source)
+        source_save_result = _save_source(spec["name"], "meeting_video_transcript", spec["name"], result.get("transcript", ""), project_id)
+        transcript_save_result = _save_items(result.get("transcript_items", []), default_source=source, project_id=project_id)
 
         screen_save_result = None
         if result.get("screen_items"):
-            screen_save_result = _save_items(result.get("screen_items", []), default_source=f"meeting_video_screen:{spec['name']}")
+            screen_save_result = _save_items(result.get("screen_items", []), default_source=f"meeting_video_screen:{spec['name']}", project_id=project_id)
 
         results.append({
             "file_name": spec["name"],
@@ -278,9 +298,21 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
     extraction = create_meeting_extraction_artifacts(
         job_result,
         source_name=", ".join(spec["name"] for spec in file_specs),
-        project_id="default",
+        project_id=project_id,
     )
     job_result["extraction"] = extraction.to_dict()
+    workspace_repository.log_event(
+        project_id,
+        "artifact",
+        "Созданы артефакты расшифровки",
+        {
+            "extraction_id": extraction.id,
+            "job_id": job.id if job else None,
+            "files": [spec["name"] for spec in file_specs],
+            "artifact_count": extraction.artifact_count,
+            "logs": list(job.logs) if job else [],
+        },
+    )
 
     if progress:
         progress.update(1.0, "completed", "Meeting extraction completed. Artifacts are ready.")

@@ -8,6 +8,7 @@ from ui_v2.layout.chat import render_chat_panel
 from ui_v2.layout.menu import render_menu
 from ui_v2.layout.topbar import render_topbar
 from ui_v2.pages.page_registry import render_current_page
+from ui_v2.state import get_current_project_id
 
 
 def render_app_shell_v2():
@@ -23,7 +24,7 @@ def render_app_shell_v2():
     init_db()
     init_fact_schema()
 
-    memory_repository = MemoryRepository()
+    memory_repository = MemoryRepository(project_id=get_current_project_id())
 
     menu_col, main_col, chat_col = st.columns([0.16, 0.60, 0.24], gap="large")
 

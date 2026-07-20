@@ -2,7 +2,7 @@ import streamlit as st
 
 
 DEFAULT_PAGE = "dashboard"
-DEFAULT_PROJECT = "OrgMeter"
+DEFAULT_PROJECT = "default"
 DEFAULT_SOURCE = "meetings"
 DEFAULT_DASHBOARD_LOADER = None
 DEFAULT_CHAT_ARTIFACT = None
@@ -18,10 +18,19 @@ def set_current_page(page: str):
     st.session_state.ui_v2_page = page
 
 
-def get_current_project() -> str:
+def get_current_project_id() -> str:
     if "ui_v2_project" not in st.session_state:
         st.session_state.ui_v2_project = DEFAULT_PROJECT
-    return st.session_state.ui_v2_project
+    project_id = st.session_state.ui_v2_project
+    from repositories.workspace_repository import workspace_repository
+    if not workspace_repository.get_project(project_id):
+        project_id = DEFAULT_PROJECT
+        st.session_state.ui_v2_project = project_id
+    return project_id
+
+
+def get_current_project() -> str:
+    return get_current_project_id()
 
 
 def set_current_project(project: str):
@@ -73,7 +82,7 @@ def set_page(page: str):
 
 
 def get_project() -> str:
-    return get_current_project()
+    return get_current_project_id()
 
 
 def set_project(project: str):

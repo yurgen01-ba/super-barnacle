@@ -5,9 +5,10 @@ from memory.timeline import Timeline
 
 
 class MemoryRepository:
-    def __init__(self):
-        self.memory = ProjectMemory()
-        self.timeline = Timeline()
+    def __init__(self, project_id: str = "default"):
+        self.project_id = project_id
+        self.memory = ProjectMemory(project_id=project_id)
+        self.timeline = Timeline(project_id=project_id)
         self.dedup = DecisionDeduplicator(existing_items=self.memory.get_all())
 
     def save_items(self, items, default_source: str = "unknown"):

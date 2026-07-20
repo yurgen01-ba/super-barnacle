@@ -7,6 +7,7 @@ from jobs.extraction_tasks import process_jira_pdfs_job, process_jira_text_job
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
 from ui.job_status import render_job_status
+from ui_v2.state import get_current_project_id
 
 
 def _stage_uploaded_files(uploaded_files, prefix: str) -> list[dict[str, str]]:
@@ -22,16 +23,16 @@ def _stage_uploaded_files(uploaded_files, prefix: str) -> list[dict[str, str]]:
     return specs
 
 
-def _render_active_job():
+def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
-    active_job = service.latest(active_only=True)
+    active_job = service.latest(active_only=True, project_id=project_id)
 
     if active_job:
         st.info("Knowledge extraction is running in background. You can switch tabs and return later.")
         render_job_status(active_job.id)
         return active_job
 
-    latest_job = service.latest(active_only=False)
+    latest_job = service.latest(active_only=False, project_id=project_id)
     if latest_job:
         render_job_status(latest_job.id)
 
@@ -39,11 +40,12 @@ def _render_active_job():
 
 
 def render_jira_tab(memory_repository: MemoryRepository):
+    project_id = get_current_project_id()
     st.header("Jira analysis")
 
     jira_text = st.text_area("Paste Jira tasks / epics / requirements", height=250)
 
-    active_job = _render_active_job()
+    active_job = _render_active_job(project_id)
     if active_job:
         return
 
@@ -52,7 +54,12 @@ def render_jira_tab(memory_repository: MemoryRepository):
             st.warning("Paste Jira text first.")
         else:
             service = KnowledgeExtractionJobService()
-            job = service.start(process_jira_text_job, text=jira_text, metadata={"source": "jira_text"})
+            job = service.start(
+                process_jira_text_job,
+                text=jira_text,
+                project_id=project_id,
+                metadata={"source": "jira_text", "project_id": project_id},
+            )
             st.session_state["latest_knowledge_extraction_job_id"] = job.id
             st.success("Jira text processing started in background.")
             st.rerun()
@@ -71,7 +78,8 @@ def render_jira_tab(memory_repository: MemoryRepository):
         job = service.start(
             process_jira_pdfs_job,
             file_specs=file_specs,
-            metadata={"source": "jira_pdf", "files": [spec["name"] for spec in file_specs]},
+            project_id=project_id,
+            metadata={"source": "jira_pdf", "project_id": project_id, "files": [spec["name"] for spec in file_specs]},
         )
 
         st.session_state["latest_knowledge_extraction_job_id"] = job.id

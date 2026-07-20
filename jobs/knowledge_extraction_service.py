@@ -32,11 +32,21 @@ class KnowledgeExtractionJobService:
             **kwargs,
         )
 
-    def latest(self, active_only: bool = False) -> RunningJob | None:
-        return running_job_store.find_latest(
+    def latest(
+        self,
+        active_only: bool = False,
+        project_id: str | None = None,
+    ) -> RunningJob | None:
+        jobs = running_job_store.list(
             job_type=KNOWLEDGE_EXTRACTION_JOB,
             active_only=active_only,
         )
+        if project_id is not None:
+            jobs = [
+                job for job in jobs
+                if (job.metadata or {}).get("project_id", "default") == project_id
+            ]
+        return jobs[0] if jobs else None
 
     def get(self, job_id: str) -> RunningJob | None:
         return running_job_store.get(job_id)

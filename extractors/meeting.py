@@ -65,6 +65,18 @@ def choose_audio_segment_seconds(duration_seconds: int) -> int:
     return 30 * 60
 
 
+def choose_max_screen_frames(
+    duration_seconds: int,
+    interval_seconds: int,
+    hard_limit: int = 30,
+) -> int:
+    """Choose one candidate frame per interval, bounded for local inference."""
+    if duration_seconds <= 0:
+        return 1
+    interval = max(int(interval_seconds or 60), 1)
+    return max(1, min(hard_limit, (duration_seconds + interval - 1) // interval))
+
+
 def split_video_to_audio_segments(video_path: str, segment_seconds: int) -> List[str]:
     output_dir = tempfile.mkdtemp(prefix="project_brain_audio_segments_")
     output_pattern = str(Path(output_dir) / "segment_%03d.wav")
@@ -302,7 +314,7 @@ def process_meeting_video(
     language: Optional[str] = None,
     analyze_screen: bool = False,
     screen_interval_seconds: int = 60,
-    max_screen_frames: int = 5,
+    max_screen_frames: int | None = None,
     screen_dedup_distance: int = 8,
     vision_provider_name: str = "ollama",
     vision_model: str = "qwen2.5vl:3b",
@@ -323,6 +335,7 @@ def process_meeting_video(
     use_audio_intelligence: bool = True,
     min_speakers: int | None = 2,
     max_speakers: int | None = 6,
+    project_id: str = "default",
 ) -> Dict:
     video_path = None
     audio_segments = []
@@ -334,6 +347,11 @@ def process_meeting_video(
         _emit(audio_progress_callback, {"event": "video_save_started"})
         video_path = save_uploaded_file_to_temp(uploaded_file)
         duration_seconds = get_video_duration_seconds(video_path)
+        if max_screen_frames is None:
+            max_screen_frames = choose_max_screen_frames(
+                duration_seconds,
+                screen_interval_seconds,
+            )
         _emit(audio_progress_callback, {"event": "video_ready", "duration_seconds": duration_seconds})
 
         transcript = ""
@@ -433,6 +451,7 @@ def process_meeting_video(
                     model=fact_extractor_model,
                     host=fact_extractor_host,
                     timeout_seconds=fact_extractor_timeout_seconds,
+                    project_id=project_id,
                 )
 
                 _emit(fact_progress_callback, {"event": "fact_extraction_started", "chunks_count": len(chunks), "model": fact_extractor_model})

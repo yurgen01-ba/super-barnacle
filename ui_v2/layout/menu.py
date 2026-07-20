@@ -1,6 +1,14 @@
 import streamlit as st
 
-from ui_v2.state import get_current_page, open_artifacts, open_source, set_current_page
+from repositories.workspace_repository import DEFAULT_PROJECT_ID, workspace_repository
+from ui_v2.state import (
+    get_current_page,
+    get_current_project_id,
+    open_artifacts,
+    open_source,
+    set_current_page,
+    set_current_project,
+)
 
 
 def _nav(label: str, icon: str, page: str):
@@ -19,6 +27,8 @@ def _source_nav(label: str, source: str):
 
 
 def render_menu():
+    current_project_id = get_current_project_id()
+    current_project = workspace_repository.get_project(current_project_id)
     st.markdown(
         """
         <div class="pb-panel">
@@ -56,8 +66,17 @@ def render_menu():
 
     st.divider()
 
-    st.button("＋  Добавить проект", key="ui_v2_add_project", width="stretch", disabled=True)
-    st.markdown("<div class='pb-nonfunctional'>Coming next: project creation flow.</div>", unsafe_allow_html=True)
+    with st.expander("＋  Добавить проект", expanded=False):
+        with st.form("ui_v2_add_project_form", clear_on_submit=True):
+            new_project_name = st.text_input("Название проекта")
+            if st.form_submit_button("Создать", width="stretch"):
+                try:
+                    project = workspace_repository.create_project(new_project_name)
+                    set_current_project(project["id"])
+                    st.success("Проект создан")
+                    st.rerun()
+                except ValueError as exc:
+                    st.error(str(exc))
 
     st.markdown(
         """
@@ -79,17 +98,32 @@ def render_menu():
         st.rerun()
 
     st.button("⬇ Экспорт данных", key="ui_v2_project_export", width="stretch", disabled=True)
-    st.button("🗑 Удалить проект", key="ui_v2_project_delete", width="stretch", disabled=True)
+    if current_project_id != DEFAULT_PROJECT_ID:
+        with st.expander("🗑 Удалить проект", expanded=False):
+            st.warning("Источники, события и артефакты этого проекта будут удалены.")
+            confirmation = st.text_input(
+                "Введите УДАЛИТЬ",
+                key="ui_v2_delete_project_confirmation",
+            )
+            if st.button(
+                "Удалить безвозвратно",
+                key="ui_v2_project_delete",
+                width="stretch",
+                disabled=confirmation != "УДАЛИТЬ",
+            ):
+                workspace_repository.delete_project(current_project_id)
+                set_current_project(DEFAULT_PROJECT_ID)
+                st.rerun()
 
     st.divider()
 
     st.markdown(
-        """
+        f"""
         <div class="pb-project-card">
             <div class="pb-project-card-row">
                 <div>
                     <div class="pb-project-label">Текущий проект</div>
-                    <div class="pb-project-name">OrgMeter</div>
+                    <div class="pb-project-name">{current_project['name']}</div>
                 </div>
                 <div class="pb-small-button">⋯</div>
             </div>

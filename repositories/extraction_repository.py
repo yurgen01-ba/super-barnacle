@@ -30,5 +30,8 @@ class ExtractionRepository:
         for row in rows:
             d=dict(zip(keys,row)); d["statistics"]=json.loads(d.pop("statistics_json") or "{}"); d["metadata"]=json.loads(d.pop("metadata_json") or "{}"); result.append(d)
         return result
+    def delete_by_project(self, project_id: str):
+        with self._connect() as conn:
+            conn.execute("DELETE FROM extractions WHERE project_id=?", (project_id,))
 
 extraction_repository = ExtractionRepository()

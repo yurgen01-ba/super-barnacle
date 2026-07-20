@@ -63,7 +63,8 @@ class TranscriptSegmentPersistence:
             },
         }
 
-        saved, skipped, errors = self.memory_repository.save_items([memory_item], default_source=source)
+        memory_repository = MemoryRepository(project_id=project_id)
+        saved, skipped, errors = memory_repository.save_items([memory_item], default_source=source)
 
         canonical_result = self.canonical_pipeline.process_extracted_items(
             source_type="transcript_segment",

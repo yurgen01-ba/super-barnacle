@@ -4,7 +4,6 @@ import streamlit as st
 
 from jobs.running_job import RunningJobStatus
 from repositories.progress_repository import ProgressRepository
-from ui.extraction_report import render_extraction_report
 
 
 def _render_result_summary(result):
@@ -14,12 +13,14 @@ def _render_result_summary(result):
     st.success("Job result is available.")
 
     if isinstance(result, dict) and result.get("extraction"):
-        st.success("Knowledge Extraction Report is available.")
-        if st.button("Open generated artifacts", key=f"open_artifacts_{result['extraction']['id']}"):
+        extraction = result["extraction"]
+        st.success(
+            f"Обработка завершена. Создано артефактов: {extraction.get('artifact_count', 0)}."
+        )
+        if st.button("Открыть полученные артефакты", key=f"open_artifacts_{extraction['id']}", type="primary"):
             st.session_state.ui_v2_page = "artifacts"
-            st.session_state.selected_extraction_id = result["extraction"]["id"]
+            st.session_state.selected_extraction_id = extraction["id"]
             st.rerun()
-        render_extraction_report(result["extraction"])
         return
 
     if isinstance(result, dict):
