@@ -28,17 +28,24 @@ class RunningJobStore:
         return job
 
     def get(self, job_id: str) -> RunningJob | None:
+        persisted = self._persistent_repository.get(job_id)
         with self._lock:
             job = self._jobs.get(job_id)
-            if job:
-                return job
-            job = self._persistent_repository.get(job_id)
-            if job:
-                self._jobs[job.id] = job
-            return job
+            if persisted and (not job or persisted.updated_at > job.updated_at):
+                self._jobs[persisted.id] = persisted
+                return persisted
+            return job or persisted
 
     def list(self, job_type: str | None = None, active_only: bool = False) -> list[RunningJob]:
+        # Streamlit may serve different browser sessions from different Python
+        # processes. Refresh from SQLite so a job completed by another process
+        # does not remain "running" forever in this process-local cache.
+        persisted_jobs = self._persistent_repository.list()
         with self._lock:
+            for persisted in persisted_jobs:
+                cached = self._jobs.get(persisted.id)
+                if not cached or persisted.updated_at > cached.updated_at:
+                    self._jobs[persisted.id] = persisted
             jobs = list(self._jobs.values())
 
         if job_type:

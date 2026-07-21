@@ -35,7 +35,7 @@ RESPONSE REQUIREMENTS:
 - Add evidence only if useful.
 - Do not produce a random list of facts.
 - Do not use "аванс" for Advance.
-- Do not invent unknown terms like "опрумы".
+- Keep the answer concise and evidence-based.
 - Structure broad project answers as:
   1. What the project is
   2. Main actors

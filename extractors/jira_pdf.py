@@ -17,10 +17,16 @@ def extract_text_from_pdf(uploaded_file) -> str:
     return "\n\n".join(pages).strip()
 
 
-def process_jira_pdfs(uploaded_files):
+def process_jira_pdfs(uploaded_files, progress_callback=None, **extractor_options):
     results = []
+    files_total = len(uploaded_files)
 
-    for uploaded_file in uploaded_files:
+    for file_index, uploaded_file in enumerate(uploaded_files, start=1):
+        if progress_callback:
+            progress_callback({
+                "event": "pdf_started", "current": file_index, "total": files_total,
+                "file_name": uploaded_file.name,
+            })
         text = extract_text_from_pdf(uploaded_file)
 
         if not text:
@@ -37,6 +43,11 @@ def process_jira_pdfs(uploaded_files):
                     "items_count": 0,
                 },
             })
+            if progress_callback:
+                progress_callback({
+                    "event": "pdf_completed", "current": file_index, "total": files_total,
+                    "file_name": uploaded_file.name, "items_count": 0,
+                })
             continue
 
         chunks = chunk_text(text, max_chars=10000)
@@ -44,14 +55,33 @@ def process_jira_pdfs(uploaded_files):
         errors = []
 
         for idx, chunk in enumerate(chunks, start=1):
+            if progress_callback:
+                progress_callback({
+                    "event": "chunk_started", "file_current": file_index,
+                    "file_total": files_total, "current": idx, "total": len(chunks),
+                    "file_name": uploaded_file.name,
+                })
             try:
                 items = extract_jira_knowledge(
                     chunk,
                     source=f"jira_pdf:{uploaded_file.name}:chunk_{idx}",
+                    **extractor_options,
                 )
                 all_items.extend(items)
+                if progress_callback:
+                    progress_callback({
+                        "event": "chunk_completed", "file_current": file_index,
+                        "file_total": files_total, "current": idx, "total": len(chunks),
+                        "file_name": uploaded_file.name, "items_count": len(items),
+                    })
             except Exception as e:
                 errors.append(f"PDF chunk {idx} failed: {repr(e)}")
+                if progress_callback:
+                    progress_callback({
+                        "event": "chunk_failed", "file_current": file_index,
+                        "file_total": files_total, "current": idx, "total": len(chunks),
+                        "file_name": uploaded_file.name, "error": str(e),
+                    })
 
         results.append({
             "file_name": uploaded_file.name,
@@ -69,6 +99,11 @@ def process_jira_pdfs(uploaded_files):
                 "items_count": len(all_items),
             },
         })
+        if progress_callback:
+            progress_callback({
+                "event": "pdf_completed", "current": file_index, "total": files_total,
+                "file_name": uploaded_file.name, "items_count": len(all_items),
+            })
 
     return results
 

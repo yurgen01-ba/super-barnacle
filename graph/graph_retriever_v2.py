@@ -83,8 +83,8 @@ class GraphRetrieverV2:
         lines.append("")
         lines.append("RELEVANT EVIDENCE")
         if evidence:
-            for item in evidence:
-                lines.append(f"- {item}")
+            for item in evidence[:8]:
+                lines.append(f"- {self._compact_value(item, 360)}")
         else:
             lines.append("- No specific supporting facts found for this question.")
 
@@ -93,7 +93,10 @@ class GraphRetrieverV2:
         for key, value in sorted(stats.items()):
             lines.append(f"- {key}: {value}")
 
-        return "\n".join(lines)
+        # A project summary may contain verbose text copied from source PDFs.
+        # Sending tens of thousands of characters to a local 7B model makes a
+        # chat click look frozen. Keep a bounded, representative graph context.
+        return "\n".join(lines)[:12_000]
 
     @staticmethod
     def _append_list(lines: list[str], title: str, values: list[str]):
@@ -102,5 +105,12 @@ class GraphRetrieverV2:
         if not values:
             lines.append("- Not confidently extracted yet.")
             return
-        for value in values[:30]:
-            lines.append(f"- {value}")
+        for value in values[:8]:
+            lines.append(f"- {GraphRetrieverV2._compact_value(value, 260)}")
+
+    @staticmethod
+    def _compact_value(value, limit: int) -> str:
+        text = " ".join(str(value).split())
+        if len(text) <= limit:
+            return text
+        return text[: max(limit - 1, 1)].rstrip() + "…"

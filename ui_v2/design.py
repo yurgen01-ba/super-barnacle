@@ -137,6 +137,38 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 max-width: 100% !important;
             }
 
+            /* Streamlit keeps the previous DOM subtree during a rerun and
+               marks it stale. Hiding it prevents a temporary inactive copy of
+               the complete interface from appearing below the current one. */
+            [data-stale="true"] {
+                display: none !important;
+            }
+
+            .pb-fullscreen-chat-marker {
+                display: none;
+            }
+
+            [data-testid="stDialog"]:has(.pb-fullscreen-chat-marker) {
+                padding: 0 !important;
+            }
+
+            [data-testid="stDialog"] [role="dialog"]:has(.pb-fullscreen-chat-marker) {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                height: 100vh !important;
+                min-height: 100vh !important;
+                max-height: 100vh !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+            }
+
+            [data-testid="stDialog"] [role="dialog"]:has(.pb-fullscreen-chat-marker)
+            > div {
+                max-width: 1180px;
+                width: 100%;
+                margin: 0 auto;
+            }
+
             h1, h2, h3 {
                 color: var(--pb-text);
                 letter-spacing: -0.04em;
@@ -1603,14 +1635,61 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 letter-spacing: -.035em;
                 text-shadow: 0 10px 45px rgba(0,0,0,.45);
                 opacity: 0;
-                animation: pbMessage 2.7s ease infinite;
+                animation: pbMessage 5.4s ease infinite;
             }}
-            .pb-loader-messages span:nth-child(2) {{ animation-delay: .9s; }}
-            .pb-loader-messages span:nth-child(3) {{ animation-delay: 1.8s; }}
+            .pb-loader-messages span:nth-child(2) {{ animation-delay: 1.35s; }}
+            .pb-loader-messages span:nth-child(3) {{ animation-delay: 2.7s; }}
+            .pb-loader-messages span:nth-child(4) {{ animation-delay: 4.05s; }}
             .pb-route-loader {{ display:flex; justify-content:center; gap:7px; padding:1rem; }}
             .pb-route-loader span {{ width:8px; height:8px; border-radius:50%; background:#FF4B4B; animation:pbDot .7s ease infinite alternate; }}
             .pb-route-loader span:nth-child(2) {{ animation-delay:.14s; }}
             .pb-route-loader span:nth-child(3) {{ animation-delay:.28s; }}
+
+            .pb-inline-task-loader {{
+                width: 100%;
+                padding: .7rem .2rem .35rem;
+            }}
+            .pb-inline-task-track {{
+                position: relative;
+                height: 8px;
+                margin: 1.05rem 1.25rem .9rem;
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--pb-border) 72%, transparent);
+                overflow: visible;
+            }}
+            .pb-inline-task-track::before {{
+                content: "";
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                background: linear-gradient(90deg, transparent, #ff4b4b 44%, #ff7373 55%, transparent 78%);
+                background-size: 220% 100%;
+                animation: pbTaskTrail 2.8s linear infinite;
+            }}
+            .pb-inline-task-seal {{
+                position: absolute;
+                z-index: 2;
+                left: 0;
+                top: 50%;
+                width: 52px;
+                height: 38px;
+                background: #ff4b4b;
+                -webkit-mask-repeat: no-repeat;
+                mask-repeat: no-repeat;
+                -webkit-mask-position: center;
+                mask-position: center;
+                -webkit-mask-size: contain;
+                mask-size: contain;
+                transform: translateY(-50%);
+                filter: drop-shadow(0 4px 9px rgba(255,75,75,.28));
+                animation: pbSealCrawl 2.8s ease-in-out infinite;
+            }}
+            .pb-inline-task-label {{
+                color: var(--pb-text-2);
+                text-align: center;
+                font-size: .9rem;
+                font-weight: 650;
+            }}
 
             {light_overrides}
 
@@ -1760,6 +1839,15 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 18% {{ opacity: 1; }}
                 82% {{ opacity: 1; }}
                 100% {{ background-position: -35% 0; opacity: .25; }}
+            }}
+            @keyframes pbTaskTrail {{
+                from {{ background-position: 115% 0; }}
+                to {{ background-position: -105% 0; }}
+            }}
+            @keyframes pbSealCrawl {{
+                0% {{ left: 0; transform: translateY(-50%) rotate(-2deg); }}
+                45% {{ transform: translateY(-58%) rotate(2deg); }}
+                100% {{ left: calc(100% - 52px); transform: translateY(-50%) rotate(-2deg); }}
             }}
             @keyframes pbGlassSweep {{
                 0% {{ transform: translateX(-42%) rotate(4deg); opacity:.35; }}

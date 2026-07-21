@@ -8,6 +8,7 @@ from providers.text.factory import create_text_provider
 from repositories.workspace_repository import workspace_repository
 from services.user_artifact_service import save_user_generated_artifact
 from ui_v2.i18n import t
+from ui_v2.loaders import inline_seal_loader
 
 
 ARTIFACT_PRESETS = {
@@ -74,15 +75,15 @@ def render_user_artifact_generator(
         return
 
     try:
-        provider = create_text_provider(
-            provider_name="ollama",
-            model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
-            host=settings.get("transcript_extractor_host", "http://localhost:11434"),
-            timeout_seconds=settings.get("transcript_extractor_timeout_seconds", 180),
-        )
-        builder = GraphArtifactBuilder(GraphRetrieverV2(project_id=project_id))
-        prompt = builder.build_prompt(artifact_type=artifact_type, instruction=instruction.strip())
-        with st.spinner("AI создаёт артефакт из контекста проекта..."):
+        with inline_seal_loader(t("artifact_generating")):
+            provider = create_text_provider(
+                provider_name="ollama",
+                model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+                host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+                timeout_seconds=settings.get("transcript_extractor_timeout_seconds", 180),
+            )
+            builder = GraphArtifactBuilder(GraphRetrieverV2(project_id=project_id))
+            prompt = builder.build_prompt(artifact_type=artifact_type, instruction=instruction.strip())
             content = provider.generate(prompt).strip()
         if not content:
             raise RuntimeError("Локальная модель вернула пустой результат.")

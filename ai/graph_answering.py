@@ -39,6 +39,27 @@ def answer_project_question_over_graph(
     return _fallback_graph_answer(question, retrieved.context)
 
 
+def stream_project_question_over_graph(
+    question: str,
+    text_provider=None,
+    graph_retriever: GraphRetrieverV2 | None = None,
+):
+    """Stream a graph-grounded answer when the provider supports it."""
+    graph_retriever = graph_retriever or GraphRetrieverV2()
+    retrieved = graph_retriever.retrieve(question)
+    prompt = build_graph_prompt(question=question, graph_context=retrieved.context)
+    text_provider = text_provider or _get_default_text_provider()
+    stream = getattr(text_provider, "stream", None) if text_provider else None
+    if callable(stream):
+        yielded = False
+        for chunk in stream(prompt):
+            yielded = True
+            yield chunk
+        if yielded:
+            return
+    yield _fallback_graph_answer(question, retrieved.context)
+
+
 def _get_default_text_provider():
     try:
         from providers.text.factory import get_text_provider
@@ -61,7 +82,6 @@ def _get_default_text_provider():
 
 def _fallback_graph_answer(question: str, graph_context: str) -> str:
     return (
-        "Я не смог вызвать текстовую модель, но подготовил graph-first контекст.\\n\\n"
-        f"Вопрос:\\n{question}\\n\\n"
-        f"Контекст графа:\\n{graph_context}"
+        "Локальная текстовая модель сейчас недоступна или не успела ответить. "
+        "Проверьте Ollama и модель в настройках проекта и повторите запрос."
     )

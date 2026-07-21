@@ -57,3 +57,41 @@ class OllamaTextProvider(TextProvider):
                 f"Model: {self.model}. Details: {exc}"
             ) from exc
 
+    def stream(self, prompt: str):
+        """Yield Ollama tokens as they arrive so the UI never looks frozen."""
+        url = self.host + "/api/chat"
+        payload = {
+            "model": self.model,
+            "stream": True,
+            "messages": [{"role": "user", "content": prompt}],
+            "options": {
+                "temperature": self.temperature,
+                "num_predict": self.num_predict,
+            },
+        }
+        request = urllib.request.Request(
+            url=url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+                for raw_line in response:
+                    if not raw_line.strip():
+                        continue
+                    data = json.loads(raw_line.decode("utf-8"))
+                    content = data.get("message", {}).get("content", "")
+                    if content:
+                        yield content
+                    if data.get("done"):
+                        break
+        except socket.timeout as exc:
+            raise TimeoutError(
+                f"Ollama text stream timed out after {self.timeout_seconds}s."
+            ) from exc
+        except urllib.error.URLError as exc:
+            raise RuntimeError(
+                f"Could not connect to Ollama at {self.host}. Model: {self.model}. Details: {exc}"
+            ) from exc
+

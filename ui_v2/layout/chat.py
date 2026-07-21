@@ -1,17 +1,21 @@
 import streamlit as st
 
-from ai.graph_answering import answer_project_question_over_graph
+from ai.graph_answering import answer_project_question_over_graph, stream_project_question_over_graph
 from graph.graph_retriever_v2 import GraphRetrieverV2
+from providers.text.factory import create_text_provider
+from repositories.workspace_repository import workspace_repository
 from ui_v2.components.user_artifact_generator import (
     render_generic_artifact_generator,
     render_user_artifact_generator,
 )
 from ui_v2.state import get_chat_artifact, get_current_project_id, set_chat_artifact
 from ui_v2.i18n import t
+from ui_v2.loaders import inline_seal_loader
 
 
-def _set_prompt(prompt: str):
-    st.session_state.ui_v2_assistant_question = prompt
+def _queue_prompt(prompt: str, pending_key: str, input_key: str):
+    st.session_state[pending_key] = prompt
+    st.session_state[input_key] = prompt
 
 
 def _render_artifact_area(memory_repository):
@@ -72,32 +76,96 @@ def _render_artifact_area(memory_repository):
         )
 
 
+def _render_chat_content(key_prefix: str, *, input_height: int = 110) -> None:
+    pending_key = f"{key_prefix}_pending_question"
+    input_key = f"{key_prefix}_question"
+    answer_rendered = False
+    prompts = [(t(f"prompt_{index}"), t(f"prompt_{index}")) for index in range(1, 5)]
+
+    for index, (label, prompt) in enumerate(prompts, start=1):
+        st.button(
+            label,
+            key=f"{key_prefix}_prompt_{index}",
+            width="stretch",
+            on_click=_queue_prompt,
+            args=(prompt, pending_key, input_key),
+        )
+
+    question = st.text_area(
+        t("question"),
+        placeholder=t("ask_question"),
+        height=input_height,
+        label_visibility="collapsed",
+        key=input_key,
+    )
+
+    if st.button(t("send"), key=f"{key_prefix}_send", width="stretch", type="primary") and question.strip():
+        st.session_state[pending_key] = question.strip()
+
+    pending_question = st.session_state.pop(pending_key, "")
+    if pending_question:
+        project_id = get_current_project_id()
+        settings = workspace_repository.get_settings(project_id)
+        try:
+            text_provider = create_text_provider(
+                provider_name=settings.get("transcript_extractor_provider", "ollama"),
+                model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+                host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+                timeout_seconds=min(
+                    max(int(settings.get("transcript_extractor_timeout_seconds", 180)), 60),
+                    600,
+                ),
+                num_predict=320,
+            )
+            with inline_seal_loader(t("chat_reading_graph")):
+                if hasattr(st, "write_stream"):
+                    answer = st.write_stream(
+                        stream_project_question_over_graph(
+                            pending_question,
+                            text_provider=text_provider,
+                            graph_retriever=GraphRetrieverV2(project_id=project_id),
+                        )
+                    )
+                    answer_rendered = True
+                else:
+                    answer = answer_project_question_over_graph(
+                        pending_question,
+                        text_provider=text_provider,
+                        graph_retriever=GraphRetrieverV2(project_id=project_id),
+                    )
+        except Exception as exc:
+            answer = t("chat_model_error").format(error=str(exc))
+        st.session_state.ui_v2_last_answer = answer
+
+    if st.session_state.get("ui_v2_last_answer") and not answer_rendered:
+        st.markdown(st.session_state.ui_v2_last_answer)
+
+
+def _open_fullscreen_chat() -> None:
+    @st.dialog(t("chat"), width="large")
+    def _dialog() -> None:
+        st.markdown('<span class="pb-fullscreen-chat-marker"></span>', unsafe_allow_html=True)
+        _render_chat_content("ui_v2_fullscreen_chat", input_height=220)
+
+    _dialog()
+
+
+@st.fragment
 def render_chat_panel(memory_repository=None):
     tab_chat, tab_artifacts = st.tabs([t("chat"), t("artifacts")])
 
     with tab_chat:
-        prompts = [(t(f"prompt_{index}"), t(f"prompt_{index}")) for index in range(1, 5)]
+        _, expand_col = st.columns([0.82, 0.18])
+        with expand_col:
+            if st.button(
+                "⛶",
+                key="ui_v2_expand_chat",
+                help=t("expand_chat"),
+                width="stretch",
+            ):
+                _open_fullscreen_chat()
 
-        for label, prompt in prompts:
-            if st.button(label, key=f"ui_v2_prompt_{label}", width="stretch"):
-                _set_prompt(prompt)
-                st.rerun()
-
-        question = st.text_area(
-            t("question"),
-            placeholder=t("ask_question"),
-            height=110,
-            label_visibility="collapsed",
-            key="ui_v2_assistant_question",
-        )
-
-        if st.button(t("send"), key="ui_v2_send", width="stretch", type="primary") and question.strip():
-            with st.spinner("Project Brain is reading Knowledge Graph..."):
-                answer = answer_project_question_over_graph(
-                    question,
-                    graph_retriever=GraphRetrieverV2(project_id=get_current_project_id()),
-                )
-            st.markdown(answer)
+        _render_chat_content("ui_v2_chat")
 
     with tab_artifacts:
         if memory_repository is None:

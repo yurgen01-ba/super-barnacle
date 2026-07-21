@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import shutil
 from datetime import datetime
@@ -519,22 +520,58 @@ class WorkspaceRepository:
 
     def dashboard_metrics(self, project_id: str) -> dict:
         conn = self._connect()
-        source_count = conn.execute(
-            "SELECT COUNT(*) FROM documents WHERE project_id = ?", (project_id,)
-        ).fetchone()[0]
-        knowledge_count = conn.execute(
-            "SELECT COUNT(*) FROM knowledge WHERE project_id = ?", (project_id,)
-        ).fetchone()[0]
+        source_rows = conn.execute(
+            "SELECT source_type FROM documents WHERE project_id = ?", (project_id,)
+        ).fetchall()
+        knowledge_rows = conn.execute(
+            "SELECT type FROM knowledge WHERE project_id = ?", (project_id,)
+        ).fetchall()
         conn.close()
+        source_count = len(source_rows)
+        knowledge_count = len(knowledge_rows)
         user_artifact_count = artifact_repository.count_user_generated_by_project(project_id)
-        # A transparent readiness score: sources establish coverage, extracted
-        # knowledge and user-requested AI artifacts establish usable depth.
-        source_score = min(source_count, 5) * 10
-        knowledge_score = min(knowledge_count, 50)
-        artifact_score = min(user_artifact_count, 10) * 2
+
+        def source_family(value: str) -> str:
+            normalized = str(value or "").lower()
+            if "meeting" in normalized or "transcript" in normalized or "video" in normalized:
+                return "meetings"
+            if "jira" in normalized:
+                return "jira"
+            if "confluence" in normalized:
+                return "confluence"
+            if "slack" in normalized:
+                return "slack"
+            return "files"
+
+        source_families = {source_family(row[0]) for row in source_rows}
+        knowledge_dimensions = {
+            "requirements": {"requirement", "feature"},
+            "rules": {"business_rule"},
+            "decisions": {"decision"},
+            "risks": {"risk"},
+            "questions": {"question"},
+            "assumptions": {"assumption"},
+            "integrations": {"integration"},
+            "glossary": {"glossary"},
+        }
+        present_types = {str(row[0] or "").lower() for row in knowledge_rows}
+        covered_dimensions = {
+            name for name, types in knowledge_dimensions.items() if present_types & types
+        }
+
+        # This is a coverage estimate, not a volume counter. Repeating many
+        # tickets from one system cannot prove that the whole project is known.
+        source_score = round(40 * len(source_families) / 5)
+        knowledge_score = round(35 * len(covered_dimensions) / len(knowledge_dimensions))
+        evidence_score = round(
+            15 * min(1.0, math.log1p(knowledge_count) / math.log1p(200))
+        ) if knowledge_count else 0
+        artifact_score = min(user_artifact_count, 5) * 2
+        diversity_caps = {0: 0, 1: 10, 2: 30, 3: 55, 4: 80, 5: 100}
+        coverage_cap = diversity_caps.get(min(len(source_families), 5), 100)
         readiness = min(
-            100,
-            source_score + knowledge_score + artifact_score,
+            coverage_cap,
+            source_score + knowledge_score + evidence_score + artifact_score,
         )
         return {
             "knowledge_health": readiness,
@@ -543,7 +580,11 @@ class WorkspaceRepository:
             "artifacts": user_artifact_count,
             "source_score": source_score,
             "knowledge_score": knowledge_score,
+            "evidence_score": evidence_score,
             "artifact_score": artifact_score,
+            "source_families": len(source_families),
+            "knowledge_dimensions": len(covered_dimensions),
+            "coverage_cap": coverage_cap,
         }
 
 

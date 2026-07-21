@@ -245,7 +245,25 @@ def process_slack_text_job(text: str, chunk_size: int = 12, project_id: str = "d
     )
     if progress:
         progress.update(0.25, "extraction", "Extracting Slack knowledge")
-    result = process_slack_text(text, chunk_size=chunk_size)
+    settings = workspace_repository.get_settings(project_id)
+
+    def slack_progress(event: dict):
+        if not progress:
+            return
+        progress.check_cancelled()
+        current = int(event.get("current", 1))
+        total = max(int(event.get("total", 1)), 1)
+        progress.update(0.25 + 0.45 * current / total, "slack:extraction", f"Slack chunk {current}/{total}")
+
+    result = process_slack_text(
+        text,
+        chunk_size=chunk_size,
+        progress_callback=slack_progress,
+        provider_name=settings.get("transcript_extractor_provider", "ollama"),
+        model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+        host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+        timeout_seconds=int(settings.get("transcript_extractor_timeout_seconds", 180)),
+    )
     if progress:
         progress.update(0.75, "memory", "Saving Slack knowledge")
     save_result = _save_items(result.get("items", []), default_source="slack_paste", project_id=project_id)
@@ -267,7 +285,29 @@ def process_jira_text_job(text: str, project_id: str = "default", job: RunningJo
     )
     if progress:
         progress.update(0.25, "extraction", "Extracting Jira knowledge")
-    result = process_jira_text(text)
+    settings = workspace_repository.get_settings(project_id)
+
+    def jira_progress(event: dict):
+        if not progress:
+            return
+        progress.check_cancelled()
+        current = int(event.get("current", 1))
+        total = max(int(event.get("total", 1)), 1)
+        status = event.get("event", "chunk")
+        progress.update(
+            0.25 + 0.45 * (current / total),
+            "jira:extraction",
+            f"Jira text chunk {current}/{total}: {status}",
+        )
+
+    result = process_jira_text(
+        text,
+        progress_callback=jira_progress,
+        provider_name=settings.get("transcript_extractor_provider", "ollama"),
+        model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+        host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+        timeout_seconds=int(settings.get("transcript_extractor_timeout_seconds", 180)),
+    )
     if progress:
         progress.update(0.75, "memory", "Saving Jira knowledge")
     save_result = _save_items(result.get("items", []), default_source="jira_text", project_id=project_id)
@@ -289,7 +329,25 @@ def process_confluence_article_job(text: str, title: str = "Confluence article",
     )
     if progress:
         progress.update(0.25, "extraction", "Extracting Confluence knowledge")
-    result = process_confluence_text(text=text, title=title)
+    settings = workspace_repository.get_settings(project_id)
+
+    def confluence_progress(event: dict):
+        if not progress:
+            return
+        progress.check_cancelled()
+        current = int(event.get("current", 1))
+        total = max(int(event.get("total", 1)), 1)
+        progress.update(0.25 + 0.45 * current / total, "confluence:extraction", f"Confluence chunk {current}/{total}")
+
+    result = process_confluence_text(
+        text=text,
+        title=title,
+        progress_callback=confluence_progress,
+        provider_name=settings.get("transcript_extractor_provider", "ollama"),
+        model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+        host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+        timeout_seconds=int(settings.get("transcript_extractor_timeout_seconds", 180)),
+    )
     if progress:
         progress.update(0.75, "memory", "Saving Confluence knowledge")
     save_result = _save_items(result.get("items", []), default_source=f"confluence:{title}", project_id=project_id)
@@ -306,6 +364,7 @@ def process_confluence_pdfs_job(
     progress = JobProgress(job) if job else None
     saved_results = []
     total = max(len(file_specs), 1)
+    settings = workspace_repository.get_settings(project_id)
 
     for index, spec in enumerate(file_specs, start=1):
         file_name = spec["name"]
@@ -326,7 +385,24 @@ def process_confluence_pdfs_job(
             })
             continue
 
-        result = process_confluence_text(text=text, title=title)
+        def confluence_progress(event: dict):
+            if not progress:
+                return
+            progress.check_cancelled()
+            chunk_current = int(event.get("current", 1))
+            chunk_total = max(int(event.get("total", 1)), 1)
+            local = ((index - 1) + chunk_current / chunk_total) / total
+            progress.update(0.05 + 0.75 * local, "confluence:extraction", f"Confluence PDF {index}/{total}, chunk {chunk_current}/{chunk_total}")
+
+        result = process_confluence_text(
+            text=text,
+            title=title,
+            progress_callback=confluence_progress,
+            provider_name=settings.get("transcript_extractor_provider", "ollama"),
+            model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+            host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+            timeout_seconds=int(settings.get("transcript_extractor_timeout_seconds", 180)),
+        )
         source_save_result = _save_source(
             file_name,
             "confluence_pdf",
@@ -370,11 +446,46 @@ def process_jira_pdfs_job(file_specs: list[dict[str, str]], project_id: str = "d
     pdf_files = [StagedPdfFile(path=spec["path"], name=spec["name"]) for spec in file_specs]
     if progress:
         progress.update(0.05, "extraction", f"Processing {len(pdf_files)} Jira PDF file(s)")
-    results = process_jira_pdfs(pdf_files)
+    settings = workspace_repository.get_settings(project_id)
+
+    def jira_progress(event: dict):
+        if not progress:
+            return
+        progress.check_cancelled()
+        file_current = int(event.get("file_current", event.get("current", 1)))
+        file_total = max(int(event.get("file_total", event.get("total", len(pdf_files) or 1))), 1)
+        chunk_current = event.get("current") if "file_current" in event else None
+        chunk_total = event.get("total") if "file_current" in event else None
+        file_name = str(event.get("file_name") or "PDF")
+        event_name = str(event.get("event") or "processing")
+        fraction = (file_current - 1) / file_total
+        if event_name == "pdf_completed":
+            fraction = file_current / file_total
+        if chunk_current is not None and chunk_total:
+            fraction += (int(chunk_current) / max(int(chunk_total), 1)) / file_total
+        detail = f", chunk {chunk_current}/{chunk_total}" if chunk_current is not None else ""
+        progress.update(
+            0.05 + 0.75 * fraction,
+            "jira:extraction",
+            f"Jira PDF {file_current}/{file_total}: {file_name}{detail} - {event_name}",
+        )
+
+    results = process_jira_pdfs(
+        pdf_files,
+        progress_callback=jira_progress,
+        provider_name=settings.get("transcript_extractor_provider", "ollama"),
+        model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+        host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+        timeout_seconds=int(settings.get("transcript_extractor_timeout_seconds", 180)),
+    )
     saved_results = []
     for index, result in enumerate(results, start=1):
         if progress:
-            progress.update(min(0.15 + index / max(len(results), 1) * 0.7, 0.85), "memory", f"Saving Jira PDF knowledge: {result.get('file_name')}")
+            progress.update(
+                min(0.80 + index / max(len(results), 1) * 0.18, 0.98),
+                "memory",
+                f"Saving Jira PDF knowledge: {result.get('file_name')}",
+            )
         source_save_result = _save_source(result["file_name"], "jira_pdf", result["file_name"], result.get("text", ""), project_id)
         extract_participants_from_text(
             text=result.get("text", ""),

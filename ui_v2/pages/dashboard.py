@@ -24,36 +24,37 @@ def _latest_changes(project_id: str):
         "settings": "⚙︎",
         "project": "◇",
     }
-    for event in events:
-        created_at = str(event.get("created_at") or "")
-        raw_title = str(event.get("title") or "")
-        if raw_title.startswith("Добавлен источник:"):
-            event_title = t("event_source_added", name=raw_title.split(":", 1)[1].strip())
-        else:
-            event_title = t(
-                {
-                    "Проект создан": "event_project_created",
-                    "Проект переименован": "event_project_renamed",
-                    "Настройки проекта обновлены": "event_settings_updated",
-                    "Запущена обработка файлов": "event_files_started",
-                    "Обработаны загруженные файлы": "event_files_processed",
-                    "Созданы артефакты расшифровки": "event_transcript_artifacts",
-                    "Запущена обработка видео": "event_video_started",
-                    "AI-артефакт создан": "event_ai_artifact_created",
-                }.get(raw_title, "event_unknown"),
-                default=raw_title,
-            )
-        label = (
-            f"{icons.get(event['event_type'], '•')} "
-            f"{created_at[:16]} · {event_title}"
-        )
-        with st.expander(label, expanded=False):
-            st.caption(f"{t('event_type')}: {event['event_type']}")
-            details = event.get("details") or {}
-            if details:
-                st.json(details)
+    with st.container(height=430, border=True, key="recent_changes_scroll"):
+        for event in events:
+            created_at = str(event.get("created_at") or "")
+            raw_title = str(event.get("title") or "")
+            if raw_title.startswith("Добавлен источник:"):
+                event_title = t("event_source_added", name=raw_title.split(":", 1)[1].strip())
             else:
-                st.text(t("no_event_details"))
+                event_title = t(
+                    {
+                        "Проект создан": "event_project_created",
+                        "Проект переименован": "event_project_renamed",
+                        "Настройки проекта обновлены": "event_settings_updated",
+                        "Запущена обработка файлов": "event_files_started",
+                        "Обработаны загруженные файлы": "event_files_processed",
+                        "Созданы артефакты расшифровки": "event_transcript_artifacts",
+                        "Запущена обработка видео": "event_video_started",
+                        "AI-артефакт создан": "event_ai_artifact_created",
+                    }.get(raw_title, "event_unknown"),
+                    default=raw_title,
+                )
+            label = (
+                f"{icons.get(event['event_type'], '•')} "
+                f"{created_at[:16]} · {event_title}"
+            )
+            with st.expander(label, expanded=False):
+                st.caption(f"{t('event_type')}: {event['event_type']}")
+                details = event.get("details") or {}
+                if details:
+                    st.json(details)
+                else:
+                    st.text(t("no_event_details"))
 
 
 def _toggle_source_card(loader: str):
@@ -103,8 +104,12 @@ def render_dashboard(memory_repository):
             source_score=metrics["source_score"],
             knowledge=metrics["knowledge_items"],
             knowledge_score=metrics["knowledge_score"],
+            evidence_score=metrics["evidence_score"],
             artifacts=metrics["artifacts"],
             artifact_score=metrics["artifact_score"],
+            families=metrics["source_families"],
+            dimensions=metrics["knowledge_dimensions"],
+            cap=metrics["coverage_cap"],
         )
         st.metric(
             t("knowledge_health"),
