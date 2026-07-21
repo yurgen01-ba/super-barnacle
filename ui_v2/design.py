@@ -875,7 +875,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 display: flex;
                 align-items: center;
                 justify-content: flex-end;
-                gap: .72rem;
+                gap: .52rem;
                 white-space: nowrap;
             }}
 
@@ -888,29 +888,70 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 border: 1px solid var(--pb-border) !important;
             }}
 
-            .pb-account-link,
-            .pb-logout-link {{
+            .pb-user-inline .pb-account-link,
+            .pb-user-inline .pb-logout-link {{
+                display: inline-flex !important;
+                width: auto !important;
+                min-width: 0 !important;
+                padding: 0 !important;
                 font-size: .84rem !important;
                 font-weight: 560;
                 line-height: 1;
                 text-decoration: none !important;
                 border: 0 !important;
+                border-radius: 0 !important;
                 background: transparent !important;
+                box-shadow: none !important;
             }}
 
-            .pb-account-link {{
+            .pb-user-inline .pb-account-link {{
                 color: var(--pb-text-2) !important;
             }}
 
-            .pb-logout-link {{
+            .pb-user-inline .pb-logout-link {{
                 color: var(--pb-red) !important;
-                margin-left: .12rem;
             }}
 
-            .pb-account-link:hover,
-            .pb-logout-link:hover {{
-                text-decoration: underline !important;
-                text-underline-offset: 3px;
+            .pb-user-inline .pb-account-link:hover,
+            .pb-user-inline .pb-logout-link:hover {{
+                text-decoration: none !important;
+                opacity: .72;
+            }}
+
+            .pb-pref-links {{
+                display: inline-flex;
+                align-items: center;
+                padding: 2px;
+                margin-left: .12rem;
+                border: 1px solid var(--pb-border);
+                border-radius: 10px;
+                background: var(--pb-panel);
+            }}
+
+            .pb-pref-links a {{
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 30px !important;
+                min-width: 30px !important;
+                height: 30px !important;
+                padding: 0 !important;
+                border: 0 !important;
+                border-radius: 8px !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                color: var(--pb-text-2) !important;
+                text-decoration: none !important;
+                font-size: .9rem !important;
+            }}
+
+            .pb-pref-links a + a {{
+                border-left: 1px solid var(--pb-border) !important;
+                border-radius: 0 8px 8px 0 !important;
+            }}
+
+            .pb-pref-links a:hover {{
+                background: var(--pb-panel-2) !important;
             }}
 
             h1 {{
