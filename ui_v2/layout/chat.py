@@ -100,16 +100,6 @@ def _render_chat_content(
                     on_click=_queue_prompt,
                     args=(prompt, pending_key, input_key),
                 )
-    else:
-        for index, (label, prompt) in enumerate(prompts, start=1):
-            st.button(
-                label,
-                key=f"{key_prefix}_prompt_{index}",
-                width="stretch",
-                on_click=_queue_prompt,
-                args=(prompt, pending_key, input_key),
-            )
-
     if compact_prompts:
         question_column, send_column = st.columns(
             [0.82, 0.18], gap="small", vertical_alignment="bottom"
@@ -126,6 +116,16 @@ def _render_chat_content(
             label_visibility="collapsed",
             key=input_key,
         )
+
+    if not compact_prompts:
+        for index, (label, prompt) in enumerate(prompts, start=1):
+            st.button(
+                label,
+                key=f"{key_prefix}_prompt_{index}",
+                width="stretch",
+                on_click=_queue_prompt,
+                args=(prompt, pending_key, input_key),
+            )
 
     with send_column:
         submitted = st.button(
