@@ -91,6 +91,12 @@ def _render_job_status_body(job_id: str | None, completed_renderer=None):
 if hasattr(st, "fragment"):
     @st.fragment(run_every="2s")
     def _render_job_status_fragment(job_id: str | None, completed_renderer=None):
+        job = ProgressRepository().get(job_id) if job_id else None
+        if job and job.status not in {RunningJobStatus.PENDING, RunningJobStatus.RUNNING}:
+            # Replace the polling fragment with a stable, non-polling result
+            # view. Otherwise native expanders lose their browser-side state
+            # on every two-second fragment refresh.
+            st.rerun()
         _render_job_status_body(job_id, completed_renderer)
 else:
     def _render_job_status_fragment(job_id: str | None, completed_renderer=None):
@@ -105,7 +111,11 @@ def render_job_status(job_id: str | None, completed_renderer=None):
     On Streamlit versions with st.fragment, status updates automatically every 2 seconds.
     On older Streamlit versions, the job still keeps running and status updates on normal page reruns.
     """
-    _render_job_status_fragment(job_id, completed_renderer)
+    job = ProgressRepository().get(job_id) if job_id else None
+    if job and job.status in {RunningJobStatus.PENDING, RunningJobStatus.RUNNING}:
+        _render_job_status_fragment(job_id, completed_renderer)
+    else:
+        _render_job_status_body(job_id, completed_renderer)
 
 
 def render_latest_job_status(job_type: str):
