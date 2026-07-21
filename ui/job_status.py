@@ -6,6 +6,7 @@ from jobs.running_job import RunningJobStatus
 from repositories.progress_repository import ProgressRepository
 from services.email_notification_service import email_notification_service
 from ui_v2.i18n import t
+from ui_v2.loaders import render_seal_progress
 
 
 def _render_result_summary(result):
@@ -58,13 +59,10 @@ def _render_job_status_body(job_id: str | None, completed_renderer=None):
 
     st.markdown(f"**Job:** `{job.job_type}`")
     st.markdown(f"**Status:** `{job.status}`")
-    st.progress(float(job.progress or 0.0))
+    render_seal_progress(float(job.progress or 0.0), str(job.message or job.stage or ""))
 
     if job.stage:
         st.caption(f"Stage: {job.stage}")
-
-    if job.message:
-        st.caption(job.message)
 
     if job.error:
         st.error(job.error)

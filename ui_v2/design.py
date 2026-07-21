@@ -144,6 +144,13 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 display: none !important;
             }
 
+            /* Keep live progress UI visible until its fragment replacement is
+               painted; otherwise the one-second refresh visibly flickers. */
+            [data-stale="true"]:has(.pb-job-toast-stack),
+            [data-stale="true"]:has(.pb-source-task-loader) {
+                display: block !important;
+            }
+
             .pb-fullscreen-chat-marker {
                 display: none;
             }
@@ -1673,7 +1680,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 /* The transparent favicon canvas adds ~8px below the visible
                    contour at this size, so a small negative offset leaves a
                    visual 3–4px gap above the progress line. */
-                bottom: -4px;
+                bottom: -1px;
                 width: 52px;
                 height: 38px;
                 background: #ff4b4b;
@@ -1692,6 +1699,54 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 text-align: center;
                 font-size: .9rem;
                 font-weight: 650;
+            }}
+
+            .pb-source-task-loader {{
+                width: 100%;
+                padding: 2.5rem .25rem .5rem;
+            }}
+            .pb-source-progress-track {{
+                position: relative;
+                height: 8px;
+                margin: 0 1.25rem .8rem;
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--pb-border) 72%, transparent);
+            }}
+            .pb-source-progress-fill {{
+                position: absolute;
+                inset: 0 auto 0 0;
+                width: var(--pb-progress);
+                border-radius: inherit;
+                background: linear-gradient(90deg, #ff8a8a, #ff4b4b 75%, #d71935);
+                transition: width .45s ease;
+            }}
+            .pb-source-progress-seal {{
+                position: absolute;
+                left: clamp(0px, calc(var(--pb-progress) - 26px), calc(100% - 52px));
+                bottom: -1px;
+                width: 52px;
+                height: 38px;
+                background: #ff4b4b;
+                -webkit-mask-repeat: no-repeat;
+                mask-repeat: no-repeat;
+                -webkit-mask-position: center;
+                mask-position: center;
+                -webkit-mask-size: contain;
+                mask-size: contain;
+                transition: left .45s ease;
+                filter: drop-shadow(0 4px 9px rgba(255,75,75,.24));
+            }}
+            .pb-source-progress-copy {{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: .5rem;
+                color: var(--pb-text-2);
+                font-size: .88rem;
+            }}
+            .pb-source-progress-copy strong {{
+                color: #ff4b4b;
+                font-variant-numeric: tabular-nums;
             }}
 
             {light_overrides}

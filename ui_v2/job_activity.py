@@ -82,9 +82,11 @@ def _render_active_job_activity(project_id: str) -> None:
         cards.append(
             dedent(f"""
             <div class="pb-job-toast" role="status" aria-live="polite">
-              <div class="pb-job-seal" aria-hidden="true">
-                <span class="pb-job-seal-base" style="-webkit-mask-image:url('{logo}');mask-image:url('{logo}')"></span>
-                <span class="pb-job-seal-progress" style="--job-progress:{percentage}%;-webkit-mask-image:url('{logo}');mask-image:url('{logo}')"></span>
+              <div class="pb-job-progress" aria-hidden="true">
+                <div class="pb-job-seal">
+                  <span class="pb-job-seal-base" style="-webkit-mask-image:url('{logo}');mask-image:url('{logo}')"></span>
+                  <span class="pb-job-seal-progress" style="--job-progress:{percentage}%;-webkit-mask-image:url('{logo}');mask-image:url('{logo}')"></span>
+                </div>
                 <strong>{percentage}%</strong>
               </div>
               <div class="pb-job-toast-copy">
@@ -123,11 +125,19 @@ def _render_active_job_activity(project_id: str) -> None:
             backdrop-filter: blur(18px) saturate(145%);
             -webkit-backdrop-filter: blur(18px) saturate(145%);
           }
+          .pb-job-progress {
+            flex: 0 0 48px;
+            width: 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+          }
           .pb-job-seal {
             position: relative;
-            flex: 0 0 46px;
-            width: 46px;
-            height: 46px;
+            width: 44px;
+            height: 34px;
           }
           .pb-job-seal > span {
             position: absolute;
@@ -145,15 +155,10 @@ def _render_active_job_activity(project_id: str) -> None:
             clip-path: inset(calc(100% - var(--job-progress)) 0 0 0);
             transition: clip-path .45s ease;
           }
-          .pb-job-seal strong {
-            position: absolute;
-            inset: 0;
-            display: grid;
-            place-items: center;
+          .pb-job-progress strong {
             font-size: 10px;
             line-height: 1;
             color: var(--pb-text, #e5e7eb);
-            text-shadow: 0 1px 8px var(--pb-panel, #111318);
           }
           .pb-job-toast-copy { min-width: 0; font-size: 12px; line-height: 1.25; }
           .pb-job-toast-copy b { display: block; margin-top: 1px; font-size: 15px; }
