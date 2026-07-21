@@ -15,8 +15,10 @@ def render_intro_loader(duration: float = 2.8) -> None:
         <div class="pb-glass-loader">
             <div class="pb-loader-card">
                 <div class="pb-loader-mark">
-                    <div class="pb-loader-orbit"></div>
-                    <div class="pb-loader-logo"><img src="{logo_data_uri()}" alt="Project Brain"></div>
+                    <div class="pb-loader-logo">
+                        <img src="{logo_data_uri()}" alt="Project Brain">
+                        <span class="pb-loader-trace"></span>
+                    </div>
                 </div>
                 <div class="pb-loader-messages">
                     <span>{t('loader_message_1')}</span>

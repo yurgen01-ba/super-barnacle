@@ -1434,10 +1434,10 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 position: relative;
                 display: grid;
                 place-items: center;
-                flex: 0 0 142px;
-                width: 142px;
-                height: 142px;
-                margin-bottom: 3.25rem;
+                flex: 0 0 112px;
+                width: 112px;
+                height: 112px;
+                margin-bottom: 3rem;
             }}
             .pb-loader-logo {{
                 position: relative;
@@ -1454,16 +1454,26 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 height: 100%;
                 object-fit: cover;
             }}
-            .pb-loader-orbit {{
+            .pb-loader-trace {{
                 position: absolute;
-                inset: 8px;
-                z-index: 1;
-                width: 126px;
-                height: 126px;
-                border: 2px solid transparent;
-                border-top-color: #FF4B4B;
-                border-radius: 50%;
-                animation: pbSpin 1.1s linear infinite;
+                inset: 0;
+                z-index: 3;
+                border-radius: inherit;
+                background: linear-gradient(
+                    105deg,
+                    transparent 0%,
+                    transparent 38%,
+                    rgba(255,75,75,.35) 44%,
+                    #FF4B4B 50%,
+                    rgba(255,75,75,.35) 56%,
+                    transparent 62%,
+                    transparent 100%
+                );
+                background-size: 320% 100%;
+                background-position: 135% 0;
+                mix-blend-mode: {'screen' if light else 'multiply'};
+                animation: pbLogoTrace 1.8s ease-in-out infinite;
+                pointer-events: none;
             }}
             .pb-loader-messages {{
                 position: relative;
@@ -1550,7 +1560,12 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 margin: 0 !important;
             }}
 
-            @keyframes pbSpin {{ to {{ transform: rotate(360deg); }} }}
+            @keyframes pbLogoTrace {{
+                0% {{ background-position: 135% 0; opacity: .25; }}
+                18% {{ opacity: 1; }}
+                82% {{ opacity: 1; }}
+                100% {{ background-position: -35% 0; opacity: .25; }}
+            }}
             @keyframes pbGlassSweep {{
                 0% {{ transform: translateX(-42%) rotate(4deg); opacity:.35; }}
                 50% {{ opacity:1; }}
@@ -1574,7 +1589,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 .pb-brand-title, .pb-caption {{ display:none; }}
                 .pb-brand {{ justify-content:center; }}
                 .pb-loader-card {{ min-height:240px; padding: 2rem 1rem; }}
-                .pb-loader-mark {{ margin-bottom: 3.75rem; }}
+                .pb-loader-mark {{ margin-bottom: 3.5rem; }}
                 .pb-loader-messages {{ width: 88vw; height: 136px; flex-basis: 136px; }}
                 .pb-loader-messages span {{ font-size: clamp(1.45rem, 8vw, 2.15rem); }}
             }}
