@@ -5,3 +5,5 @@ python-dotenv
 pydantic
 pypdf
 py7zr
+cryptography
+httpx

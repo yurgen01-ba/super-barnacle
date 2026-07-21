@@ -22,6 +22,7 @@ from services.participant_extraction_service import (
     extract_participants_from_text,
 )
 from services.speaker_sample_service import create_speaker_samples
+from services.atlassian_sync_service import atlassian_sync_service
 from utils.text import chunk_text
 
 
@@ -42,6 +43,30 @@ class StagedPdfFile(BytesIO):
         self.path = path
         self.name = name
         super().__init__(Path(path).read_bytes())
+
+
+def process_atlassian_sync_job(
+    connection_id: int,
+    user_id: str,
+    project_id: str = "default",
+    sync_jira: bool = True,
+    sync_confluence: bool = True,
+    job: RunningJob | None = None,
+) -> dict[str, Any]:
+    progress = JobProgress(job) if job else None
+
+    def update(value: float, stage: str, message: str):
+        if progress:
+            progress.update(value, stage, message)
+
+    return atlassian_sync_service.sync(
+        connection_id=connection_id,
+        user_id=user_id,
+        project_id=project_id,
+        sync_jira=sync_jira,
+        sync_confluence=sync_confluence,
+        progress=update,
+    )
 
 
 def _save_items(items: list[dict], default_source: str, project_id: str = "default") -> dict[str, Any]:

@@ -50,3 +50,26 @@ python -m streamlit run app.py
 ## Important
 
 If you replace an existing project, back it up first.
+
+# Atlassian Cloud connection
+
+Project Brain can connect a normal Atlassian user account through OAuth 2.0 (3LO).
+The application never receives or stores the user's Atlassian login or password.
+It stores encrypted, revocable OAuth tokens separately for each Project Brain user
+and project, then imports the Jira issues and Confluence content visible to that user.
+
+Create an OAuth 2.0 integration in the Atlassian Developer Console and configure the
+exact callback URL shown below. Add the Jira and Confluence read scopes listed in
+`services/atlassian_oauth_service.py`.
+
+```env
+ATLASSIAN_CLIENT_ID=your-client-id
+ATLASSIAN_CLIENT_SECRET=your-client-secret
+ATLASSIAN_REDIRECT_URI=http://localhost:8501/?atlassian_callback=1
+```
+
+For production, use an HTTPS callback and set a stable
+`PROJECT_BRAIN_TOKEN_ENCRYPTION_KEY`. The local development fallback key is generated
+in the ignored `data/.oauth_token_key` file. After configuration, open project settings,
+select **Atlassian**, authorize the account, then start synchronization for the required
+site.

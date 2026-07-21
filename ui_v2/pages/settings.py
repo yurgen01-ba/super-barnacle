@@ -6,6 +6,7 @@ from providers.text.health import check_ollama_text_model
 from providers.vision.health import check_ollama_health
 from repositories.workspace_repository import workspace_repository
 from ui_v2.auth import get_authenticated_user
+from ui_v2.atlassian import render_atlassian_settings
 from ui_v2.components.html import title
 from ui_v2.i18n import t
 from ui_v2.state import get_current_project_id, set_current_page
@@ -68,6 +69,8 @@ def render_settings():
                 workspace_repository.rename_project(project_id, project_name, user["id"])
                 st.success(t("name_saved"))
                 st.rerun()
+
+    render_atlassian_settings()
 
     st.divider()
     st.subheader("Slack")

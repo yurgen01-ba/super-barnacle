@@ -566,6 +566,71 @@ SUPPLEMENTAL_TRANSLATIONS = {
 for _language, _values in SUPPLEMENTAL_TRANSLATIONS.items():
     TRANSLATIONS[_language].update(_values)
 
+ATLASSIAN_TRANSLATIONS = {
+    "ru": {
+        "atlassian_integration": "Atlassian",
+        "atlassian_integration_caption": "Подключите обычный аккаунт Atlassian и импортируйте все доступные вам данные Jira и Confluence. Логин и пароль Project Brain не получает.",
+        "atlassian_not_configured": "OAuth Atlassian ещё не настроен администратором Project Brain.",
+        "connect_atlassian": "Подключить Atlassian",
+        "connect_atlassian_help": "Откроется защищённая страница входа Atlassian в новой вкладке.",
+        "atlassian_refresh_after_auth": "После подтверждения доступа вернитесь на эту страницу и обновите её.",
+        "atlassian_no_connections": "Подключённых сайтов Atlassian пока нет.",
+        "atlassian_authorization_denied": "Доступ Atlassian не был предоставлен.",
+        "atlassian_connection_failed": "Не удалось подключить Atlassian: {error}",
+        "atlassian_connected_sites": "Atlassian подключён. Доступные сайты: {sites}.",
+        "atlassian_close_tab": "Эту вкладку можно закрыть и вернуться в Project Brain.",
+        "atlassian_last_sync": "Последняя синхронизация: {date}",
+        "atlassian_status_connected": "подключён",
+        "atlassian_status_error": "ошибка синхронизации",
+        "sync_all_accessible": "Импортировать всё доступное",
+        "atlassian_sync_started": "Синхронизация Atlassian запущена в фоне.",
+        "disconnect": "Отключить",
+        "atlassian_disconnected": "Подключение Atlassian удалено.",
+    },
+    "en": {
+        "atlassian_integration": "Atlassian",
+        "atlassian_integration_caption": "Connect a regular Atlassian account and import all Jira and Confluence data available to you. Project Brain never receives your login or password.",
+        "atlassian_not_configured": "Atlassian OAuth has not been configured by the Project Brain administrator.",
+        "connect_atlassian": "Connect Atlassian",
+        "connect_atlassian_help": "The secure Atlassian sign-in page opens in a new tab.",
+        "atlassian_refresh_after_auth": "After granting access, return to this page and refresh it.",
+        "atlassian_no_connections": "No Atlassian sites are connected yet.",
+        "atlassian_authorization_denied": "Atlassian access was not granted.",
+        "atlassian_connection_failed": "Could not connect Atlassian: {error}",
+        "atlassian_connected_sites": "Atlassian connected. Available sites: {sites}.",
+        "atlassian_close_tab": "You can close this tab and return to Project Brain.",
+        "atlassian_last_sync": "Last synchronization: {date}",
+        "atlassian_status_connected": "connected",
+        "atlassian_status_error": "synchronization error",
+        "sync_all_accessible": "Import everything available",
+        "atlassian_sync_started": "Atlassian synchronization started in the background.",
+        "disconnect": "Disconnect",
+        "atlassian_disconnected": "Atlassian connection removed.",
+    },
+    "uk": {
+        "atlassian_integration": "Atlassian",
+        "atlassian_integration_caption": "Підключіть звичайний обліковий запис Atlassian та імпортуйте всі доступні вам дані Jira й Confluence. Project Brain не отримує логін або пароль.",
+        "atlassian_not_configured": "OAuth Atlassian ще не налаштовано адміністратором Project Brain.",
+        "connect_atlassian": "Підключити Atlassian",
+        "connect_atlassian_help": "Захищена сторінка входу Atlassian відкриється в новій вкладці.",
+        "atlassian_refresh_after_auth": "Після підтвердження доступу поверніться на цю сторінку та оновіть її.",
+        "atlassian_no_connections": "Підключених сайтів Atlassian ще немає.",
+        "atlassian_authorization_denied": "Доступ Atlassian не надано.",
+        "atlassian_connection_failed": "Не вдалося підключити Atlassian: {error}",
+        "atlassian_connected_sites": "Atlassian підключено. Доступні сайти: {sites}.",
+        "atlassian_close_tab": "Цю вкладку можна закрити й повернутися до Project Brain.",
+        "atlassian_last_sync": "Остання синхронізація: {date}",
+        "atlassian_status_connected": "підключено",
+        "atlassian_status_error": "помилка синхронізації",
+        "sync_all_accessible": "Імпортувати все доступне",
+        "atlassian_sync_started": "Синхронізацію Atlassian запущено у фоні.",
+        "disconnect": "Відключити",
+        "atlassian_disconnected": "Підключення Atlassian видалено.",
+    },
+}
+for _language, _values in ATLASSIAN_TRANSLATIONS.items():
+    TRANSLATIONS[_language].update(_values)
+
 
 def _browser_language() -> str:
     try:
