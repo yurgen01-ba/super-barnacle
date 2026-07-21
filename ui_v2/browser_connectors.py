@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import streamlit as st
 
-from jobs.extraction_tasks import process_local_browser_sync_job
+from jobs.extraction_tasks import process_atlassian_sync_job, process_local_browser_sync_job
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
+from repositories.atlassian_connection_repository import atlassian_connection_repository
+from services.atlassian_oauth_service import atlassian_oauth_service
 from services.local_browser_connector import (
     LocalBrowserConnectorError,
     local_browser_session_registry,
@@ -17,6 +19,60 @@ DEFAULT_URLS = {
     "atlassian": "https://your-company.atlassian.net",
     "slack": "https://app.slack.com/client",
 }
+
+
+def render_atlassian_oauth_source_connector(product: str) -> None:
+    product = str(product or "").lower()
+    if product not in {"jira", "confluence"}:
+        raise ValueError("Unsupported Atlassian product")
+    user = get_authenticated_user() or {}
+    user_id = str(user.get("id") or "")
+    project_id = get_current_project_id()
+    if not user_id:
+        return
+
+    st.markdown(f"#### {t('atlassian_oauth_title')}")
+    st.caption(t("atlassian_oauth_source_caption", product=product.title()))
+    if not atlassian_oauth_service.configured:
+        st.warning(t("atlassian_oauth_unavailable"))
+        return
+
+    connect_url = atlassian_oauth_service.authorization_url(user_id, project_id)
+    st.link_button(
+        t("connect_via_oauth"), connect_url, type="primary",
+        icon=":material/link:", help=t("connect_atlassian_help"),
+    )
+
+    connections = atlassian_connection_repository.list_for_project(project_id, user_id)
+    matching = [
+        connection for connection in connections
+        if any(product in scope for scope in connection.get("scopes", []))
+    ]
+    for connection in matching:
+        with st.container(border=True):
+            st.markdown(f"**{connection['site_name']}**")
+            st.caption(connection["site_url"])
+            if st.button(
+                t("import_via_oauth"),
+                key=f"source_oauth_sync_{product}_{connection['id']}",
+                type="primary",
+            ):
+                service = KnowledgeExtractionJobService()
+                job = service.start(
+                    process_atlassian_sync_job,
+                    connection_id=connection["id"], user_id=user_id,
+                    project_id=project_id, sync_jira=product == "jira",
+                    sync_confluence=product == "confluence",
+                    metadata={
+                        "source": f"atlassian_oauth_{product}",
+                        "project_id": project_id,
+                        "site": connection["site_name"],
+                        "notification_email": get_authenticated_email(),
+                    },
+                )
+                st.session_state["latest_knowledge_extraction_job_id"] = job.id
+                st.success(t("atlassian_sync_started"))
+                st.rerun()
 
 
 def render_local_browser_connector(

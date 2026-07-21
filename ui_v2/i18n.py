@@ -648,6 +648,11 @@ LOCAL_BROWSER_TRANSLATIONS = {
         "browser_session_deleted": "Браузер закрыт, временный профиль и данные сессии удалены.",
         "browser_sync_started": "Импорт из локального браузера запущен в фоне. После завершения временная сессия будет удалена.",
         "browser_import_product": "Будет импортирован продукт: {product}.",
+        "atlassian_oauth_title": "Подключение через Atlassian OAuth",
+        "atlassian_oauth_source_caption": "Основной безопасный способ импорта {product}: вход и подтверждение доступа выполняются на стороне Atlassian.",
+        "atlassian_oauth_unavailable": "OAuth Atlassian не настроен администратором Project Brain.",
+        "connect_via_oauth": "Подключить через OAuth",
+        "import_via_oauth": "Импортировать через OAuth",
     },
     "en": {
         "local_browser_connector": "Local browser sign-in (fallback)",
@@ -665,6 +670,11 @@ LOCAL_BROWSER_TRANSLATIONS = {
         "browser_session_deleted": "The browser is closed and its temporary profile and session data were deleted.",
         "browser_sync_started": "Local browser import started in the background. The temporary session will be deleted when it finishes.",
         "browser_import_product": "Product to import: {product}.",
+        "atlassian_oauth_title": "Connect with Atlassian OAuth",
+        "atlassian_oauth_source_caption": "The primary secure way to import {product}: sign-in and consent happen on Atlassian.",
+        "atlassian_oauth_unavailable": "Atlassian OAuth has not been configured by the Project Brain administrator.",
+        "connect_via_oauth": "Connect with OAuth",
+        "import_via_oauth": "Import with OAuth",
     },
     "uk": {
         "local_browser_connector": "Локальний вхід через браузер (fallback)",
@@ -682,6 +692,11 @@ LOCAL_BROWSER_TRANSLATIONS = {
         "browser_session_deleted": "Браузер закрито, тимчасовий профіль і дані сесії видалено.",
         "browser_sync_started": "Імпорт із локального браузера запущено у фоні. Після завершення тимчасову сесію буде видалено.",
         "browser_import_product": "Буде імпортовано продукт: {product}.",
+        "atlassian_oauth_title": "Підключення через Atlassian OAuth",
+        "atlassian_oauth_source_caption": "Основний безпечний спосіб імпорту {product}: вхід і підтвердження доступу виконуються на стороні Atlassian.",
+        "atlassian_oauth_unavailable": "OAuth Atlassian не налаштовано адміністратором Project Brain.",
+        "connect_via_oauth": "Підключити через OAuth",
+        "import_via_oauth": "Імпортувати через OAuth",
     },
 }
 for _language, _values in LOCAL_BROWSER_TRANSLATIONS.items():

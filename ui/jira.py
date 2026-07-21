@@ -8,7 +8,10 @@ from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
 from ui_v2.auth import get_authenticated_email
 from ui_v2.i18n import t
-from ui_v2.browser_connectors import render_local_browser_connector
+from ui_v2.browser_connectors import (
+    render_atlassian_oauth_source_connector,
+    render_local_browser_connector,
+)
 
 def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
@@ -30,6 +33,8 @@ def render_jira_tab(memory_repository: MemoryRepository):
     project_id = get_current_project_id()
     st.header(t("jira_analysis"))
 
+    render_atlassian_oauth_source_connector("jira")
+    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
     render_local_browser_connector("atlassian", atlassian_products=("jira",))
     st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
 
