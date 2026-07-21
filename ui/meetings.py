@@ -1,7 +1,7 @@
 import base64
 import html
 from pathlib import Path
-import tempfile
+from uuid import uuid4
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -18,7 +18,9 @@ from ui_v2.i18n import t
 
 
 def _stage_uploaded_files(uploaded_files, prefix: str) -> list[dict[str, str]]:
-    staged_dir = Path(tempfile.mkdtemp(prefix=prefix))
+    staged_root = Path("data") / "job_uploads"
+    staged_dir = staged_root / f"{prefix}{uuid4().hex}"
+    staged_dir.mkdir(parents=True, exist_ok=False)
     specs = []
     for uploaded_file in uploaded_files:
         safe_name = (uploaded_file.name or "uploaded_file").replace("/", "_").replace("\\", "_")
@@ -121,12 +123,12 @@ def _completed_speaker_controls(project_id: str):
 
 def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
-    active_job = service.latest(active_only=True, project_id=project_id)
+    active_job = service.latest(active_only=True, project_id=project_id, source_section="meetings")
     if active_job:
         st.info(t("background_processing"))
         render_job_status(active_job.id, _completed_speaker_controls(project_id))
         return active_job
-    latest_job = service.latest(active_only=False, project_id=project_id)
+    latest_job = service.latest(active_only=False, project_id=project_id, source_section="meetings")
     if latest_job:
         render_job_status(latest_job.id, _completed_speaker_controls(project_id))
     return None
@@ -182,6 +184,9 @@ def _start_meeting_processing(uploaded_videos, settings: dict, project_id: str):
             "source": "meetings",
             "project_id": project_id,
             "files": [spec["name"] for spec in file_specs],
+            "resume_kind": "meeting_videos",
+            "file_specs": file_specs,
+            "settings": runtime_settings,
             "notification_email": get_authenticated_email(),
         },
     )

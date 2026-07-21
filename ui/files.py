@@ -41,14 +41,14 @@ def render_files_tab(memory_repository):
         key="generic_project_files_uploader",
     )
 
-    active_job = service.latest(active_only=True, project_id=project_id)
+    active_job = service.latest(active_only=True, project_id=project_id, source_section="files")
     if active_job:
         st.info(t("background_processing"))
         render_job_status(active_job.id)
         return
 
-    latest_job = service.latest(active_only=False, project_id=project_id)
-    if latest_job and (latest_job.metadata or {}).get("source") == "files":
+    latest_job = service.latest(active_only=False, project_id=project_id, source_section="files")
+    if latest_job:
         render_job_status(latest_job.id)
 
     if st.button(t("process_files"), type="primary"):

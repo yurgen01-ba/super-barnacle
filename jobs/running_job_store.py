@@ -3,6 +3,7 @@ from __future__ import annotations
 import threading
 
 from jobs.running_job import RunningJob
+from repositories.background_job_repository import background_job_repository
 
 
 class RunningJobStore:
@@ -13,18 +14,28 @@ class RunningJobStore:
     Jobs survive tab switches and Streamlit reruns while the Python process is alive.
     """
 
-    def __init__(self):
+    def __init__(self, persistent_repository=None):
         self._lock = threading.RLock()
-        self._jobs: dict[str, RunningJob] = {}
+        self._persistent_repository = persistent_repository or background_job_repository
+        self._jobs: dict[str, RunningJob] = {
+            job.id: job for job in self._persistent_repository.list()
+        }
 
     def add(self, job: RunningJob) -> RunningJob:
         with self._lock:
             self._jobs[job.id] = job
+            self._persistent_repository.save(job)
         return job
 
     def get(self, job_id: str) -> RunningJob | None:
         with self._lock:
-            return self._jobs.get(job_id)
+            job = self._jobs.get(job_id)
+            if job:
+                return job
+            job = self._persistent_repository.get(job_id)
+            if job:
+                self._jobs[job.id] = job
+            return job
 
     def list(self, job_type: str | None = None, active_only: bool = False) -> list[RunningJob]:
         with self._lock:
@@ -45,6 +56,7 @@ class RunningJobStore:
     def update(self, job: RunningJob):
         with self._lock:
             self._jobs[job.id] = job
+            self._persistent_repository.save(job)
 
     def cancel(self, job_id: str) -> bool:
         job = self.get(job_id)

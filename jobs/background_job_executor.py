@@ -36,6 +36,32 @@ class BackgroundJobExecutor:
 
         return job
 
+    def resume(
+        self,
+        job: RunningJob,
+        fn: Callable[..., Any],
+        *args,
+        **kwargs,
+    ) -> RunningJob:
+        current = self._futures.get(job.id)
+        if current and not current.done():
+            return job
+        job.status = "pending"
+        job.error = ""
+        job.finished_at = None
+        job.cancel_requested = False
+        job.metadata["resume_count"] = int(job.metadata.get("resume_count", 0)) + 1
+        job.add_log("Application restarted; resuming job from the latest checkpoint.")
+        running_job_store.update(job)
+        self._futures[job.id] = self._executor.submit(
+            self._run_job, job, fn, *args, **kwargs
+        )
+        return job
+
+    def is_running(self, job_id: str) -> bool:
+        future = self._futures.get(job_id)
+        return bool(future and not future.done())
+
     def _run_job(self, job: RunningJob, fn: Callable[..., Any], *args, **kwargs):
         job.mark_running()
         running_job_store.update(job)

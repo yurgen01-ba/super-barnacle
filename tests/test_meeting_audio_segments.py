@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from transcription.meeting_audio_integration import (
@@ -62,6 +64,31 @@ class MeetingAudioSegmentTests(unittest.TestCase):
             ["audio_segment_started", "audio_segment_completed", "audio_segment_started", "audio_segment_completed"],
             [event["event"] for event in events],
         )
+
+    @patch("transcription.meeting_audio_integration.process_audio_with_selected_backend")
+    def test_completed_segments_resume_from_checkpoint(self, transcribe):
+        transcribe.side_effect = [_result("first", 0, 1), _result("second", 0, 1)]
+        with tempfile.TemporaryDirectory() as directory:
+            first = process_audio_segments_with_selected_backend(
+                ["first.wav", "second.wav"],
+                segment_seconds=900,
+                checkpoint_dir=directory,
+            )
+            self.assertEqual(2, transcribe.call_count)
+            self.assertTrue((Path(directory) / "audio_segment_0001.json").is_file())
+
+            events = []
+            second = process_audio_segments_with_selected_backend(
+                ["first.wav", "second.wav"],
+                segment_seconds=900,
+                checkpoint_dir=directory,
+                progress_callback=events.append,
+            )
+
+        self.assertEqual(2, transcribe.call_count)
+        self.assertEqual(first["text"], second["text"])
+        completed = [event for event in events if event["event"] == "audio_segment_completed"]
+        self.assertTrue(all(event["resumed_from_checkpoint"] for event in completed))
 
 
 if __name__ == "__main__":

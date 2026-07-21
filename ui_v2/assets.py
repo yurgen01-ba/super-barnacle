@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import io
 from pathlib import Path
 from PIL import Image, ImageFilter
 
@@ -37,6 +38,14 @@ def favicon_image() -> Image.Image:
     icon = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
     icon.putalpha(canvas)
     return icon
+
+
+def favicon_data_uri() -> str:
+    """Return the transparent seal mark as an embeddable PNG."""
+    buffer = io.BytesIO()
+    favicon_image().save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
 
 
 def svg_data_uri(name: str) -> str:

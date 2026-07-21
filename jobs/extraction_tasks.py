@@ -525,6 +525,9 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
         uploaded_file = StagedUploadedFile(path=spec["path"], name=spec["name"])
         runtime_settings = dict(settings)
         runtime_settings.pop("participant_names", None)
+        runtime_settings["checkpoint_dir"] = str(
+            Path("data") / "job_checkpoints" / (job.id if job else "manual") / f"file_{index:04d}"
+        )
 
         if progress:
             audio_callback, vision_callback, fact_callback = _make_meeting_progress_callbacks(

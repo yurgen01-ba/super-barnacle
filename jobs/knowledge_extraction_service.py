@@ -45,6 +45,7 @@ class KnowledgeExtractionJobService:
         self,
         active_only: bool = False,
         project_id: str | None = None,
+        source_section: str | None = None,
     ) -> RunningJob | None:
         jobs = running_job_store.list(
             job_type=KNOWLEDGE_EXTRACTION_JOB,
@@ -55,7 +56,25 @@ class KnowledgeExtractionJobService:
                 job for job in jobs
                 if (job.metadata or {}).get("project_id", "default") == project_id
             ]
+        if source_section is not None:
+            jobs = [job for job in jobs if self._belongs_to_source(job, source_section)]
         return jobs[0] if jobs else None
+
+    @staticmethod
+    def _belongs_to_source(job: RunningJob, source_section: str) -> bool:
+        metadata = job.metadata or {}
+        explicit_sections = metadata.get("source_sections") or []
+        if metadata.get("source_section") == source_section or source_section in explicit_sections:
+            return True
+        source = str(metadata.get("source") or "")
+        prefixes = {
+            "meetings": ("meetings",),
+            "jira": ("jira", "atlassian_oauth_jira", "local_browser_jira"),
+            "confluence": ("confluence", "atlassian_oauth_confluence", "local_browser_confluence"),
+            "slack": ("slack", "local_browser_slack"),
+            "files": ("files",),
+        }
+        return any(source.startswith(prefix) for prefix in prefixes.get(source_section, (source_section,)))
 
     def get(self, job_id: str) -> RunningJob | None:
         return running_job_store.get(job_id)

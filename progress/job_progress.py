@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from jobs.running_job import RunningJob
+from jobs.running_job_store import running_job_store
 
 
 class JobProgress:
@@ -13,6 +14,7 @@ class JobProgress:
 
     def update(self, progress: float | None = None, stage: str | None = None, message: str | None = None):
         self.job.update_progress(progress=progress, stage=stage, message=message)
+        running_job_store.update(self.job)
 
     def check_cancelled(self):
         if self.job.cancel_requested:

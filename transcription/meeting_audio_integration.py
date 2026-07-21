@@ -1,5 +1,7 @@
 from __future__ import annotations
+import json
 import time
+from pathlib import Path
 from transcription.audio_intelligence_service import audio_intelligence_service
 
 def process_audio_with_selected_backend(
@@ -122,13 +124,18 @@ def process_audio_segments_with_selected_backend(
     min_speakers: int | None = 2,
     max_speakers: int | None = 6,
     progress_callback=None,
+    checkpoint_dir: str | None = None,
     **processing_options,
 ) -> dict:
     results: list[tuple[dict, float]] = []
     total = len(audio_segments)
+    checkpoint_path = Path(checkpoint_dir) if checkpoint_dir else None
+    if checkpoint_path:
+        checkpoint_path.mkdir(parents=True, exist_ok=True)
 
     for index, segment_path in enumerate(audio_segments, start=1):
         started_at = time.time()
+        result_path = checkpoint_path / f"audio_segment_{index:04d}.json" if checkpoint_path else None
         if progress_callback:
             progress_callback({
                 "event": "audio_segment_started",
@@ -136,14 +143,25 @@ def process_audio_segments_with_selected_backend(
                 "total": total,
                 "segment_path": segment_path,
             })
-        result = process_audio_with_selected_backend(
-            segment_path,
-            language,
-            min_speakers,
-            max_speakers,
-            None,
-            **processing_options,
-        )
+        resumed = bool(result_path and result_path.is_file())
+        if resumed:
+            result = json.loads(result_path.read_text(encoding="utf-8"))
+        else:
+            result = process_audio_with_selected_backend(
+                segment_path,
+                language,
+                min_speakers,
+                max_speakers,
+                None,
+                **processing_options,
+            )
+            if result_path:
+                temporary_path = result_path.with_suffix(".tmp")
+                temporary_path.write_text(
+                    json.dumps(result, ensure_ascii=False, default=str),
+                    encoding="utf-8",
+                )
+                temporary_path.replace(result_path)
         offset = float((index - 1) * segment_seconds)
         results.append((result, offset))
         if progress_callback:
@@ -156,6 +174,7 @@ def process_audio_segments_with_selected_backend(
                 "raw_text": result.get("text") or "",
                 "detected_language": result.get("language") or language or "unknown",
                 "elapsed_seconds": round(time.time() - started_at, 1),
+                "resumed_from_checkpoint": resumed,
             })
 
     return merge_audio_intelligence_segments(results)

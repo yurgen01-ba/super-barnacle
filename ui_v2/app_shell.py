@@ -14,8 +14,10 @@ from ui_v2.layout.chat import render_chat_panel
 from ui_v2.layout.menu import render_menu
 from ui_v2.layout.topbar import render_topbar, render_user_controls
 from ui_v2.loaders import render_intro_loader, render_transition_loader
+from ui_v2.job_activity import render_active_job_activity
 from ui_v2.pages.page_registry import render_current_page
 from ui_v2.state import get_current_project_id, set_current_page, set_current_project
+from jobs.job_recovery import resume_incomplete_jobs
 
 
 def _render_project_onboarding(user: dict) -> None:
@@ -66,6 +68,12 @@ def render_app_shell_v2():
 
     inject_ui_v2_theme(st.session_state.get("pb_theme", "dark"))
 
+    # Resume durable background work as soon as the Streamlit process serves a
+    # session; recovery must not depend on the user opening a particular page.
+    init_db()
+    init_fact_schema()
+    resume_incomplete_jobs()
+
     if render_atlassian_oauth_callback():
         return
     if render_slack_oauth_callback():
@@ -89,10 +97,9 @@ def render_app_shell_v2():
     if st.session_state.pop("pb_page_transition", False):
         render_transition_loader()
 
-    init_db()
-    init_fact_schema()
-
-    memory_repository = MemoryRepository(project_id=get_current_project_id())
+    project_id = get_current_project_id()
+    memory_repository = MemoryRepository(project_id=project_id)
+    render_active_job_activity(project_id)
     menu_col, main_col, chat_col = st.columns([0.18, 0.58, 0.24], gap="large")
 
     with menu_col:

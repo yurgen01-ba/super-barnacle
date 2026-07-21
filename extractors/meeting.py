@@ -342,6 +342,7 @@ def process_meeting_video(
     diarization_min_new_run_words: int = 2,
     diarization_min_new_run_seconds: float = 0.65,
     project_id: str = "default",
+    checkpoint_dir: str | None = None,
 ) -> Dict:
     video_path = None
     audio_segments = []
@@ -410,6 +411,7 @@ def process_meeting_video(
                     min_speakers,
                     max_speakers,
                     audio_progress_callback,
+                    checkpoint_dir=checkpoint_dir,
                     local_transcript_repair_enabled=local_transcript_repair_enabled,
                     transcript_repair_min_bad_seconds=transcript_repair_min_bad_seconds,
                     transcript_repair_min_quality_gain=transcript_repair_min_quality_gain,

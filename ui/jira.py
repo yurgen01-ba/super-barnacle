@@ -12,14 +12,14 @@ from ui_v2.source_connections import render_source_authorization
 
 def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
-    active_job = service.latest(active_only=True, project_id=project_id)
+    active_job = service.latest(active_only=True, project_id=project_id, source_section="jira")
 
     if active_job:
         st.info(t("background_processing"))
         render_job_status(active_job.id)
         return active_job
 
-    latest_job = service.latest(active_only=False, project_id=project_id)
+    latest_job = service.latest(active_only=False, project_id=project_id, source_section="jira")
     if latest_job:
         render_job_status(latest_job.id)
 
