@@ -9,6 +9,7 @@ from transcription.speaker_utterance_stabilizer import (
     stabilize_speaker_utterances_with_debug,
     transform_utterances,
 )
+from transcription.local_segment_repair import repair_transcript_segments
 
 
 def _clean_text(text: str) -> str:
@@ -42,6 +43,12 @@ class AudioIntelligenceService:
         language: str | None = None,
         min_speakers: int | None = None,
         max_speakers: int | None = None,
+        local_transcript_repair_enabled: bool = True,
+        transcript_repair_min_bad_seconds: float = 6.0,
+        transcript_repair_min_quality_gain: float = 0.12,
+        diarization_correction_enabled: bool = True,
+        diarization_min_new_run_words: int = 2,
+        diarization_min_new_run_seconds: float = 0.65,
     ) -> dict:
         result = self.transcriber.transcribe(
             audio_path,
@@ -49,6 +56,22 @@ class AudioIntelligenceService:
             min_speakers,
             max_speakers,
         )
+        repair_debug = []
+        if local_transcript_repair_enabled and result.segments:
+            result.segments, repair_debug = repair_transcript_segments(
+                audio_path=audio_path,
+                segments=result.segments,
+                language=language or result.language or "ru",
+                min_bad_seconds=transcript_repair_min_bad_seconds,
+                min_quality_gain=transcript_repair_min_quality_gain,
+                retranscribe=lambda clip_path: self.transcriber.transcribe(
+                    clip_path, language, min_speakers, max_speakers
+                ),
+            )
+            result.text = " ".join(
+                segment.text.strip() for segment in result.segments if segment.text.strip()
+            )
+
         payload = result.to_dict()
 
         startup_warning = getattr(
@@ -68,7 +91,11 @@ class AudioIntelligenceService:
             utterances,
             boundary_debug,
         ) = stabilize_speaker_utterances_with_debug(
-            result.segments
+            result.segments,
+            min_new_run_words=(diarization_min_new_run_words if diarization_correction_enabled else 1),
+            min_new_run_duration_seconds=(
+                diarization_min_new_run_seconds if diarization_correction_enabled else 0.0
+            ),
         )
 
         clean_utterances = transform_utterances(
@@ -131,6 +158,12 @@ class AudioIntelligenceService:
         runtime[
             "speaker_boundary_validation"
         ] = boundary_debug
+        runtime["local_transcript_repair_enabled"] = local_transcript_repair_enabled
+        runtime["local_transcript_repair"] = repair_debug
+        runtime["local_transcript_repairs_accepted"] = sum(
+            1 for event in repair_debug if event.get("accepted")
+        )
+        runtime["diarization_correction_enabled"] = diarization_correction_enabled
 
         return payload
 

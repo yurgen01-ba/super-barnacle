@@ -139,6 +139,48 @@ def render_settings():
             disabled=not manual_audio_segments,
         )
 
+        st.markdown(f"#### {t('local_transcript_correction')}")
+        local_transcript_repair_enabled = st.checkbox(
+            t("repair_bad_fragments"),
+            value=bool(settings.get("local_transcript_repair_enabled", True)),
+        )
+        transcript_repair_min_bad_seconds = st.slider(
+            t("bad_fragment_seconds"),
+            3.0,
+            20.0,
+            float(settings.get("transcript_repair_min_bad_seconds", 6.0)),
+            0.5,
+            disabled=not local_transcript_repair_enabled,
+        )
+        transcript_repair_min_quality_gain = st.slider(
+            t("minimum_quality_gain"),
+            0.05,
+            0.30,
+            float(settings.get("transcript_repair_min_quality_gain", 0.12)),
+            0.01,
+            disabled=not local_transcript_repair_enabled,
+        )
+        diarization_correction_enabled = st.checkbox(
+            t("correct_diarization"),
+            value=bool(settings.get("diarization_correction_enabled", True)),
+        )
+        diarization_min_new_run_words = st.slider(
+            t("speaker_change_min_words"),
+            1,
+            5,
+            int(settings.get("diarization_min_new_run_words", 2)),
+            1,
+            disabled=not diarization_correction_enabled,
+        )
+        diarization_min_new_run_seconds = st.slider(
+            t("speaker_change_min_seconds"),
+            0.2,
+            2.0,
+            float(settings.get("diarization_min_new_run_seconds", 0.65)),
+            0.05,
+            disabled=not diarization_correction_enabled,
+        )
+
         st.markdown(f"#### {t('screen_analysis')}")
         analyze_screen = st.checkbox(
             t("analyze_screen"),
@@ -191,6 +233,12 @@ def render_settings():
             "transcript_extractor_timeout_seconds": transcript_extractor_timeout_seconds,
             "manual_audio_segments": manual_audio_segments,
             "manual_segment_minutes": manual_segment_minutes,
+            "local_transcript_repair_enabled": local_transcript_repair_enabled,
+            "transcript_repair_min_bad_seconds": transcript_repair_min_bad_seconds,
+            "transcript_repair_min_quality_gain": transcript_repair_min_quality_gain,
+            "diarization_correction_enabled": diarization_correction_enabled,
+            "diarization_min_new_run_words": diarization_min_new_run_words,
+            "diarization_min_new_run_seconds": diarization_min_new_run_seconds,
             "analyze_screen": analyze_screen,
             "screen_interval_seconds": screen_interval_seconds,
             "screen_dedup_distance": screen_dedup_distance,

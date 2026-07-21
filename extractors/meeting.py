@@ -335,6 +335,12 @@ def process_meeting_video(
     use_audio_intelligence: bool = True,
     min_speakers: int | None = 2,
     max_speakers: int | None = 6,
+    local_transcript_repair_enabled: bool = True,
+    transcript_repair_min_bad_seconds: float = 6.0,
+    transcript_repair_min_quality_gain: float = 0.12,
+    diarization_correction_enabled: bool = True,
+    diarization_min_new_run_words: int = 2,
+    diarization_min_new_run_seconds: float = 0.65,
     project_id: str = "default",
 ) -> Dict:
     video_path = None
@@ -391,7 +397,17 @@ def process_meeting_video(
         if use_audio_intelligence:
             try:
                 audio_intelligence_result = process_audio_with_selected_backend(
-                    video_path, language, min_speakers, max_speakers, audio_progress_callback
+                    video_path,
+                    language,
+                    min_speakers,
+                    max_speakers,
+                    audio_progress_callback,
+                    local_transcript_repair_enabled=local_transcript_repair_enabled,
+                    transcript_repair_min_bad_seconds=transcript_repair_min_bad_seconds,
+                    transcript_repair_min_quality_gain=transcript_repair_min_quality_gain,
+                    diarization_correction_enabled=diarization_correction_enabled,
+                    diarization_min_new_run_words=diarization_min_new_run_words,
+                    diarization_min_new_run_seconds=diarization_min_new_run_seconds,
                 )
             except Exception as exc:
                 errors.append(f"Audio Intelligence failed; fallback to legacy Whisper: {repr(exc)}")

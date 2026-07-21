@@ -1,5 +1,3 @@
-from html import escape
-
 import streamlit as st
 
 from repositories.user_repository import user_repository
@@ -38,6 +36,10 @@ def _toggle_theme():
         user_repository.update_preferences(user["id"], theme=theme)
 
 
+def _open_profile():
+    set_current_page("profile")
+
+
 def render_topbar():
     user = get_authenticated_user() or {}
     project_id = get_current_project_id()
@@ -48,66 +50,56 @@ def render_topbar():
     st.session_state["ui_v2_topbar_project"] = project_id
 
     with st.container(key="pb_topbar"):
-        project_col, status_col = st.columns(
-            [0.72, 0.28], vertical_alignment="center"
-        )
+        project_col, status_col = st.columns([0.72, 0.28], vertical_alignment="center")
         with project_col:
-            st.selectbox(
-                t("project"),
-                project_ids,
-                index=project_ids.index(project_id),
-                format_func=lambda value: project_names[value],
-                key="ui_v2_topbar_project",
-                on_change=_switch_project,
+            label_col, select_col = st.columns(
+                [0.18, 0.82], gap="small", vertical_alignment="center"
             )
+            with label_col:
+                st.markdown(f'<span class="pb-project-label">{t("project")}</span>', unsafe_allow_html=True)
+            with select_col:
+                st.selectbox(
+                    t("project"), project_ids, index=project_ids.index(project_id),
+                    format_func=lambda value: project_names[value],
+                    key="ui_v2_topbar_project", on_change=_switch_project,
+                    label_visibility="collapsed",
+                )
         with status_col:
             st.markdown(
-                f"""
-                <div class="pb-knowledge-indicator">
-                    <span class="pb-muted">{t('knowledge_health')}</span>
-                    <span class="pb-knowledge-value">{metrics['knowledge_health']}%</span>
-                </div>
-                """,
+                f'<div class="pb-knowledge-indicator"><span class="pb-muted">'
+                f'{t("knowledge_health")}</span><span class="pb-knowledge-value">'
+                f'{metrics["knowledge_health"]}%</span></div>',
                 unsafe_allow_html=True,
             )
-def handle_user_control_actions() -> None:
-    action = str(st.query_params.get("account_action", "") or "")
-    if not action:
-        return
-    del st.query_params["account_action"]
-    if action == "profile":
-        set_current_page("profile")
-    elif action == "logout":
-        logout()
-    elif action == "language":
-        _cycle_language()
-        st.rerun()
-    elif action == "theme":
-        _toggle_theme()
-        st.rerun()
 
 
 def render_user_controls() -> None:
-    """Compact profile links rendered directly above the chat panel."""
+    """In-app account actions styled as compact links and icon buttons."""
     user = get_authenticated_user() or {}
-    name = escape(str(user.get("name") or user.get("email") or "User"))
-    avatar = escape(avatar_source(user), quote=True)
+    name = str(user.get("name") or user.get("email") or "User")
     current_language = get_language()
     theme = st.session_state.get("pb_theme", "dark")
-    theme_icon = "\u2600" if theme == "dark" else "\u263e"
-    theme_help = t("switch_to_light" if theme == "dark" else "switch_to_dark")
+
     with st.container(key="pb_user_controls"):
-        st.markdown(
-            f"""
-            <div class="pb-user-inline">
-                <img class="pb-user-avatar" src="{avatar}" alt="{name}">
-                <a class="pb-account-link" href="?account_action=profile">{name}</a>
-                <a class="pb-logout-link" href="?account_action=logout">{t('logout')}</a>
-                <span class="pb-pref-links">
-                    <a href="?account_action=language" title="{t('language')}: {t('language_' + current_language)}">\U0001F310</a>
-                    <a href="?account_action=theme" title="{theme_help}">{theme_icon}</a>
-                </span>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        avatar_col, profile_col, logout_col, language_col, theme_col = st.columns(
+            [0.13, 0.43, 0.18, 0.11, 0.11], gap="small", vertical_alignment="center"
         )
+        with avatar_col:
+            st.image(avatar_source(user), width=42)
+        with profile_col:
+            st.button(name, key="open_user_profile", on_click=_open_profile)
+        with logout_col:
+            if st.button(t("logout"), key="auth_logout"):
+                logout()
+        with language_col:
+            st.button(
+                "\U0001F310", key="pb_language_cycle",
+                help=f"{t('language')}: {t('language_' + current_language)}",
+                on_click=_cycle_language,
+            )
+        with theme_col:
+            st.button(
+                "\u2600" if theme == "dark" else "\u263e", key="pb_theme_toggle",
+                help=t("switch_to_light" if theme == "dark" else "switch_to_dark"),
+                on_click=_toggle_theme,
+            )

@@ -29,13 +29,17 @@ def inject_ui_v2_theme(theme: str = "dark"):
             background: #E5E9EF !important;
         }
         div[data-testid="stButton"] button:not([kind="primary"]),
-        div[data-testid="stButton"] button:not([kind="primary"]) p,
-        [data-testid="stFormSubmitButton"] button:not([kind*="primary"]),
-        [data-testid="stFormSubmitButton"] button:not([kind*="primary"]) p {
+        [data-testid="stFormSubmitButton"] button:not([kind*="primary"]) {
             background: #FFFFFF !important;
             color: #343840 !important;
             -webkit-text-fill-color: #343840 !important;
             border-color: #D6DAE1 !important;
+        }
+        div[data-testid="stButton"] button:not([kind="primary"]) *,
+        [data-testid="stFormSubmitButton"] button:not([kind*="primary"]) * {
+            background: transparent !important;
+            color: #343840 !important;
+            -webkit-text-fill-color: #343840 !important;
         }
         div[data-testid="stSelectbox"] div[data-baseweb="select"],
         div[data-testid="stSelectbox"] [role="group"],
@@ -398,9 +402,10 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 white-space: nowrap !important;
             }
 
-            .st-key-pb_navigation div[data-testid="stButton"] button > div,
-            .st-key-pb_navigation div[data-testid="stButton"] button span,
-            .st-key-pb_navigation div[data-testid="stButton"] button p {
+        .st-key-pb_navigation div[data-testid="stButton"] button > div,
+        .st-key-pb_navigation div[data-testid="stButton"] button span,
+        .st-key-pb_navigation div[data-testid="stButton"] button p {
+                background: transparent !important;
                 width: 100% !important;
                 justify-content: flex-start !important;
                 text-align: left !important;
@@ -1065,6 +1070,110 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 border-color: var(--pb-border) !important;
             }}
 
+            div[data-testid="stButton"] button *,
+            [data-testid="stFormSubmitButton"] button *,
+            [data-testid="stDownloadButton"] button * {{
+                background: transparent !important;
+            }}
+
+            .st-key-pb_navigation div[data-testid="stButton"] button::before,
+            .st-key-ui_v2_source_meetings button::before,
+            .st-key-ui_v2_source_files button::before,
+            .st-key-ui_v2_source_slack button::before,
+            .st-key-ui_v2_source_jira button::before,
+            .st-key-ui_v2_source_confluence button::before {{
+                background-color: currentColor !important;
+                color: inherit !important;
+                opacity: 1 !important;
+            }}
+
+            details[data-testid="stExpander"],
+            details[data-testid="stExpander"] > summary,
+            details[data-testid="stExpander"][open] > summary,
+            details[data-testid="stExpander"] > div,
+            details[data-testid="stExpander"] > summary:hover {{
+                background: var(--pb-panel) !important;
+                color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            details[data-testid="stExpander"] > summary * {{
+                background: transparent !important;
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+            }}
+
+            [data-testid="stAppViewContainer"] > .main,
+            [data-testid="stMain"],
+            [data-testid="stAppViewBlockContainer"],
+            [data-testid="stMainBlockContainer"],
+            .block-container {{
+                margin-top: 0 !important;
+                padding-top: .25rem !important;
+            }}
+
+            [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] {{
+                gap: 0 !important;
+            }}
+
+            .st-key-pb_user_controls [data-testid="stHorizontalBlock"] {{
+                justify-content: flex-end !important;
+                align-items: center !important;
+                flex-wrap: nowrap !important;
+                gap: .3rem !important;
+            }}
+
+            .st-key-pb_user_controls img {{
+                width: 42px !important;
+                height: 42px !important;
+                border-radius: 50% !important;
+                object-fit: cover !important;
+            }}
+
+            .st-key-open_user_profile button,
+            .st-key-auth_logout button {{
+                width: auto !important;
+                min-height: 2rem !important;
+                padding: 0 .12rem !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }}
+
+            .st-key-open_user_profile button:hover,
+            .st-key-auth_logout button:hover {{
+                background: transparent !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }}
+
+            .st-key-open_user_profile button p {{
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+                text-decoration: none !important;
+                white-space: nowrap !important;
+            }}
+
+            .st-key-auth_logout button p {{
+                color: #FF4B4B !important;
+                -webkit-text-fill-color: #FF4B4B !important;
+                text-decoration: none !important;
+                white-space: nowrap !important;
+            }}
+
+            .st-key-pb_language_cycle button,
+            .st-key-pb_theme_toggle button {{
+                width: 32px !important;
+                min-width: 32px !important;
+                height: 32px !important;
+                min-height: 32px !important;
+                padding: 0 !important;
+                border-radius: 8px !important;
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-text-2) !important;
+            }}
+
             div[data-testid="stTextArea"] textarea,
             div[data-testid="stTextInput"] input,
             div[data-testid="stSelectbox"] div[data-baseweb="select"],
@@ -1235,6 +1344,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 height: 1.15rem;
                 margin-right: .45rem;
                 background: currentColor;
+                color: inherit;
                 mask-position: center;
                 mask-repeat: no-repeat;
                 mask-size: contain;
@@ -1320,16 +1430,34 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 box-shadow: inset 0 0 120px rgba(255,255,255,.035);
                 overflow: hidden;
             }}
+            .pb-loader-mark {{
+                position: relative;
+                display: grid;
+                place-items: center;
+                flex: 0 0 142px;
+                width: 142px;
+                height: 142px;
+                margin-bottom: 3.25rem;
+            }}
             .pb-loader-logo {{
                 position: relative;
+                z-index: 2;
                 width: 92px;
                 height: 92px;
                 border-radius: 28px;
                 overflow: hidden;
                 background: var(--pb-bg);
             }}
+            .pb-loader-logo img {{
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }}
             .pb-loader-orbit {{
                 position: absolute;
+                inset: 8px;
+                z-index: 1;
                 width: 126px;
                 height: 126px;
                 border: 2px solid transparent;
@@ -1337,7 +1465,13 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 border-radius: 50%;
                 animation: pbSpin 1.1s linear infinite;
             }}
-            .pb-loader-messages {{ position: relative; width: min(980px, 90vw); height: 92px; margin-top: 48px; }}
+            .pb-loader-messages {{
+                position: relative;
+                flex: 0 0 112px;
+                width: min(980px, 88vw);
+                height: 112px;
+                margin: 0;
+            }}
             .pb-loader-messages span {{
                 position: absolute;
                 inset: 0;
@@ -1359,6 +1493,62 @@ def inject_ui_v2_theme(theme: str = "dark"):
             .pb-route-loader span:nth-child(3) {{ animation-delay:.28s; }}
 
             {light_overrides}
+
+            .st-key-pb_user_controls [data-testid="stHorizontalBlock"] {{
+                justify-content: flex-end !important;
+                align-items: center !important;
+                flex-wrap: nowrap !important;
+                gap: .42rem !important;
+            }}
+
+            .st-key-pb_user_controls [data-testid="stHorizontalBlock"] > div {{
+                flex: 0 0 auto !important;
+                width: auto !important;
+                min-width: 0 !important;
+            }}
+
+            html body .st-key-open_user_profile div[data-testid="stButton"] button,
+            html body .st-key-auth_logout div[data-testid="stButton"] button {{
+                width: auto !important;
+                min-width: 0 !important;
+                min-height: 1.8rem !important;
+                padding: 0 .08rem !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }}
+
+            html body .st-key-open_user_profile div[data-testid="stButton"] button *,
+            html body .st-key-auth_logout div[data-testid="stButton"] button * {{
+                background: transparent !important;
+                text-decoration: none !important;
+            }}
+
+            html body .st-key-open_user_profile div[data-testid="stButton"] button p {{
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+            }}
+
+            html body .st-key-auth_logout div[data-testid="stButton"] button p {{
+                color: #FF4B4B !important;
+                -webkit-text-fill-color: #FF4B4B !important;
+            }}
+
+            .pb-project-label {{
+                display: block;
+                color: var(--pb-muted) !important;
+                font-size: .78rem !important;
+                font-weight: 750;
+                letter-spacing: .06em;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }}
+
+            .st-key-pb_topbar [data-testid="stSelectbox"] {{
+                margin: 0 !important;
+            }}
 
             @keyframes pbSpin {{ to {{ transform: rotate(360deg); }} }}
             @keyframes pbGlassSweep {{
@@ -1383,7 +1573,10 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 h1 {{ font-size: 2rem !important; }}
                 .pb-brand-title, .pb-caption {{ display:none; }}
                 .pb-brand {{ justify-content:center; }}
-                .pb-loader-card {{ min-height:240px; }}
+                .pb-loader-card {{ min-height:240px; padding: 2rem 1rem; }}
+                .pb-loader-mark {{ margin-bottom: 3.75rem; }}
+                .pb-loader-messages {{ width: 88vw; height: 136px; flex-basis: 136px; }}
+                .pb-loader-messages span {{ font-size: clamp(1.45rem, 8vw, 2.15rem); }}
             }}
         </style>
         """,
