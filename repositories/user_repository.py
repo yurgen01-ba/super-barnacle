@@ -17,6 +17,12 @@ PBKDF2_ITERATIONS = 310_000
 PASSWORD_RE = re.compile(r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])[\x21-\x7E]{8,}$")
 
 
+class UserRepositoryError(ValueError):
+    def __init__(self, code: str, message: str):
+        self.code = code
+        super().__init__(message)
+
+
 class UserRepository:
     def __init__(self, db_path: str | Path | None = None):
         self.db_path = Path(db_path or os.getenv("AUTH_DB_PATH", "data/auth.db"))
@@ -93,7 +99,8 @@ class UserRepository:
     @staticmethod
     def validate_password(password: str) -> None:
         if not PASSWORD_RE.fullmatch(password or ""):
-            raise ValueError(
+            raise UserRepositoryError(
+                "password_policy",
                 "Пароль должен содержать не менее 8 символов: латинскую букву, "
                 "цифру и специальный символ. Кириллица и пробелы не допускаются."
             )
@@ -101,7 +108,7 @@ class UserRepository:
     def register(self, email: str, password: str, name: str = "") -> dict:
         normalized_email = self.normalize_email(email)
         if not EMAIL_RE.match(normalized_email):
-            raise ValueError("Введите корректный email.")
+            raise UserRepositoryError("invalid_email", "Введите корректный email.")
         self.validate_password(password)
         clean_name = re.sub(r"\s+", " ", str(name or "").strip()) or normalized_email.split("@", 1)[0]
         salt = os.urandom(16)
@@ -129,7 +136,7 @@ class UserRepository:
                     ),
                 )
         except sqlite3.IntegrityError as exc:
-            raise ValueError("Пользователь с таким email уже зарегистрирован.") from exc
+            raise UserRepositoryError("duplicate_email", "Пользователь с таким email уже зарегистрирован.") from exc
         user = self.get_by_email(normalized_email)
         user["_verification_token"] = verification_token
         return user
@@ -147,7 +154,7 @@ class UserRepository:
             if not hmac.compare_digest(candidate, row["password_hash"]):
                 return None
             if not bool(row["email_verified"]):
-                raise ValueError("Подтвердите email по ссылке из письма перед входом.")
+                raise UserRepositoryError("email_not_verified", "Подтвердите email по ссылке из письма перед входом.")
             connection.execute(
                 "UPDATE users SET last_login_at = ? WHERE id = ?",
                 (datetime.now(timezone.utc).isoformat(), row["id"]),
@@ -165,7 +172,7 @@ class UserRepository:
     ) -> dict:
         normalized_email = self.normalize_email(email)
         if not EMAIL_RE.match(normalized_email):
-            raise ValueError("OIDC-провайдер не вернул корректный email.")
+            raise UserRepositoryError("invalid_oidc_email", "OIDC-провайдер не вернул корректный email.")
         now = datetime.now(timezone.utc).isoformat()
         with self._connect() as connection:
             row = connection.execute("SELECT * FROM users WHERE email = ?", (normalized_email,)).fetchone()
@@ -236,7 +243,7 @@ class UserRepository:
     def update_profile(self, user_id: str, *, name: str, avatar_url: str | None = None) -> dict:
         clean_name = re.sub(r"\s+", " ", str(name or "").strip())
         if not clean_name:
-            raise ValueError("Имя не может быть пустым.")
+            raise UserRepositoryError("name_required", "Имя не может быть пустым.")
         with self._connect() as connection:
             connection.execute(
                 "UPDATE users SET name = ?, avatar_url = COALESCE(?, avatar_url) WHERE id = ?",
@@ -265,10 +272,10 @@ class UserRepository:
         with self._connect() as connection:
             row = connection.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
             if not row or row["auth_provider"] != "email":
-                raise ValueError("Пароль управляется внешним провайдером авторизации.")
+                raise UserRepositoryError("oauth_password", "Пароль управляется внешним провайдером авторизации.")
             candidate = self._hash_password(current_password or "", row["password_salt"])
             if not hmac.compare_digest(candidate, row["password_hash"]):
-                raise ValueError("Текущий пароль указан неверно.")
+                raise UserRepositoryError("current_password_wrong", "Текущий пароль указан неверно.")
             salt = os.urandom(16)
             password_hash = self._hash_password(new_password, salt)
             connection.execute(

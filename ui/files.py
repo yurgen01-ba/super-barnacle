@@ -11,6 +11,7 @@ from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
 from ui_v2.auth import get_authenticated_email
 from ui_v2.state import get_current_project_id
+from ui_v2.i18n import t
 
 
 FILE_TYPES = ["txt", "md", "csv", "json", "log", "yaml", "yml", "pdf", "docx", "xlsx", "pptx"]
@@ -31,13 +32,10 @@ def render_files_tab(memory_repository):
     project_id = get_current_project_id()
     service = KnowledgeExtractionJobService()
 
-    st.header("Загрузка файлов")
-    st.caption(
-        "Поддерживаются текстовые документы, PDF, Word, Excel и PowerPoint. "
-        "Извлечённый текст и структурированные знания сохраняются как артефакты проекта."
-    )
+    st.header(t("upload_files"))
+    st.caption(t("files_caption"))
     uploaded_files = st.file_uploader(
-        "Выберите файлы",
+        t("choose_files"),
         type=FILE_TYPES,
         accept_multiple_files=True,
         key="generic_project_files_uploader",
@@ -45,7 +43,7 @@ def render_files_tab(memory_repository):
 
     active_job = service.latest(active_only=True, project_id=project_id)
     if active_job:
-        st.info("Файлы обрабатываются в фоне.")
+        st.info(t("background_processing"))
         render_job_status(active_job.id)
         return
 
@@ -53,9 +51,9 @@ def render_files_tab(memory_repository):
     if latest_job and (latest_job.metadata or {}).get("source") == "files":
         render_job_status(latest_job.id)
 
-    if st.button("Обработать файлы", type="primary"):
+    if st.button(t("process_files"), type="primary"):
         if not uploaded_files:
-            st.warning("Сначала выберите хотя бы один файл.")
+            st.warning(t("choose_file_warning"))
             return
         specs = _stage_files(uploaded_files)
         job = service.start(
@@ -76,5 +74,5 @@ def render_files_tab(memory_repository):
             {"job_id": job.id, "files": [item["name"] for item in specs]},
         )
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success("Обработка файлов запущена. Окно можно закрыть — после завершения придёт письмо.")
+        st.success(t("processing_started_email"))
         st.rerun()

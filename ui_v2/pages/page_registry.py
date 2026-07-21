@@ -13,6 +13,7 @@ from ui_v2.pages.exports import render_exports
 from ui_v2.pages.profile import render_profile
 from ui_v2.pages.participants import render_participants
 from ui_v2.state import get_current_page
+from ui_v2.i18n import t
 
 
 PAGE_TITLES = {
@@ -52,5 +53,5 @@ def render_current_page(memory_repository):
     elif page == "participants":
         render_participants()
     else:
-        st.warning(f"Unknown page: {page}. Opening Dashboard.")
+        st.warning(t("unknown_page", page=page))
         render_dashboard(memory_repository)

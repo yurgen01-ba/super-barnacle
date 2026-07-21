@@ -6,6 +6,7 @@ import streamlit as st
 
 from repositories.artifact_repository import artifact_repository
 from ui_v2.state import get_current_project_id
+from ui_v2.i18n import t
 
 
 def _download_payload(artifact: dict) -> tuple[str, str, str]:
@@ -31,20 +32,14 @@ def render_exports():
     project_id = get_current_project_id()
     artifacts = artifact_repository.list_user_generated_by_project(project_id)
 
-    st.title("Экспорт данных")
-    st.caption(
-        "Готовые документы, Jira-задачи, презентации и другие результаты, "
-        "которые пользователь запросил у AI."
-    )
+    st.title(t("exports"))
+    st.caption(t("exports_caption"))
 
     if not artifacts:
-        st.info(
-            "Пользовательских AI-артефактов пока нет. Создайте документ, Jira-задачи "
-            "или другой результат во вкладке «Артефакты» справа."
-        )
+        st.info(t("exports_empty"))
         return
 
-    query = st.text_input("Поиск", placeholder="Название или тип артефакта")
+    query = st.text_input(t("search"), placeholder=t("artifact_search_placeholder"))
     if query.strip():
         needle = query.strip().lower()
         artifacts = [
@@ -53,7 +48,7 @@ def render_exports():
             or needle in str(item.get("artifact_type", "")).lower()
         ]
 
-    st.caption(f"Найдено: {len(artifacts)}")
+    st.caption(t("found", count=len(artifacts)))
     for artifact in artifacts:
         with st.container(border=True):
             info_col, download_col, delete_col = st.columns([0.60, 0.22, 0.18])
@@ -66,7 +61,7 @@ def render_exports():
             payload, filename, mime = _download_payload(artifact)
             with download_col:
                 st.download_button(
-                    "Скачать",
+                    t("download"),
                     data=payload,
                     file_name=filename,
                     mime=mime,
@@ -75,7 +70,7 @@ def render_exports():
                 )
             with delete_col:
                 if st.button(
-                    "Удалить",
+                    t("delete"),
                     key=f"export_delete_{artifact['id']}",
                     width="stretch",
                 ):

@@ -85,20 +85,20 @@ class ParticipantRepository:
             item = grouped.setdefault(
                 key,
                 {
-                    "Имя": row["name"],
-                    "Роль": row["role"] or "—",
-                    "Источники": [],
-                    "Последнее обновление": row["updated_at"],
+                    "name": row["name"],
+                    "role": row["role"] or "—",
+                    "sources": [],
+                    "updated_at": row["updated_at"],
                 },
             )
             source = row["source_type"]
-            if source not in item["Источники"]:
-                item["Источники"].append(source)
-            if item["Роль"] == "—" and row["role"]:
-                item["Роль"] = row["role"]
+            if source not in item["sources"]:
+                item["sources"].append(source)
+            if item["role"] == "—" and row["role"]:
+                item["role"] = row["role"]
         result = []
         for item in grouped.values():
-            item["Источники"] = ", ".join(item["Источники"])
+            item["sources"] = ", ".join(item["sources"])
             result.append(item)
         return result
 

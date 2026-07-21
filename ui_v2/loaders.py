@@ -5,6 +5,7 @@ import time
 import streamlit as st
 
 from ui_v2.assets import logo_data_uri
+from ui_v2.i18n import t
 
 
 def render_intro_loader() -> None:
@@ -16,9 +17,9 @@ def render_intro_loader() -> None:
                 <img src="{logo_data_uri()}" alt="Project Brain">
                 <div class="pb-loader-orbit"></div>
                 <div class="pb-loader-messages">
-                    <span>Создай цифровой образ проекта</span>
-                    <span>Задавай вопросы по базе знаний</span>
-                    <span>Превращай контекст в готовые артефакты</span>
+                    <span>{t('loader_message_1')}</span>
+                    <span>{t('loader_message_2')}</span>
+                    <span>{t('loader_message_3')}</span>
                 </div>
             </div>
         </div>

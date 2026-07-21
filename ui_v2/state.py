@@ -19,12 +19,21 @@ def set_current_page(page: str):
 
 
 def get_current_project_id() -> str:
-    if "ui_v2_project" not in st.session_state:
-        st.session_state.ui_v2_project = DEFAULT_PROJECT
-    project_id = st.session_state.ui_v2_project
     from repositories.workspace_repository import workspace_repository
-    if not workspace_repository.get_project(project_id):
-        projects = workspace_repository.list_projects()
+    from ui_v2.auth import get_authenticated_user
+
+    user = get_authenticated_user()
+    if not user:
+        return DEFAULT_PROJECT
+    user_id = user["id"]
+    workspace_repository.ensure_user_workspace(
+        user_id, user.get("email", ""), user.get("name", "")
+    )
+    if "ui_v2_project" not in st.session_state:
+        st.session_state.ui_v2_project = workspace_repository.list_projects(user_id)[0]["id"]
+    project_id = st.session_state.ui_v2_project
+    if not workspace_repository.get_project(project_id, user_id):
+        projects = workspace_repository.list_projects(user_id)
         project_id = projects[0]["id"] if projects else DEFAULT_PROJECT
         st.session_state.ui_v2_project = project_id
     return project_id

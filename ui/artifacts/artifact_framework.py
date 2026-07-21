@@ -7,6 +7,7 @@ from ui.artifacts.artifact_download_center import render_artifact_download_cente
 from ui.artifacts.artifact_metadata_panel import render_artifact_metadata_panel
 from ui.artifacts.artifact_navigation import render_artifact_breadcrumbs
 from ui.artifacts.artifact_viewer_framework import render_artifact_viewer
+from ui_v2.i18n import t
 
 
 def _css_content(value: str) -> str:
@@ -23,7 +24,7 @@ def _css_content(value: str) -> str:
 def _render_artifact_tabs(extraction: dict, artifacts: list[dict]):
     artifacts = sort_artifacts(artifacts)
     if not artifacts:
-        st.info("No artifacts match the current search.")
+        st.info(t("no_artifact_matches"))
         return
 
     labels = []
@@ -87,10 +88,10 @@ def _render_artifact_tabs(extraction: dict, artifacts: list[dict]):
             render_artifact_download_center(artifact)
 
 def render_artifact_framework(project_id: str = "default"):
-    st.header("Artifacts")
+    st.header(t("artifacts"))
     extractions = extraction_repository.list(project_id=project_id, limit=100)
     if not extractions:
-        st.info("No extractions yet.")
+        st.info(t("no_extractions"))
         return
 
     selected_extraction_id = st.session_state.get("selected_extraction_id")
@@ -102,7 +103,7 @@ def render_artifact_framework(project_id: str = "default"):
                 break
 
     extraction = st.selectbox(
-        "Extraction",
+        t("extraction"),
         extractions,
         index=default_index,
         format_func=lambda e: f"{e['source_name']} · {e['status']} · {e['started_at']}",
@@ -110,7 +111,7 @@ def render_artifact_framework(project_id: str = "default"):
     st.session_state["selected_extraction_id"] = extraction["id"]
     render_artifact_breadcrumbs(extraction=extraction)
 
-    query = st.text_input("Search artifacts")
+    query = st.text_input(t("search_artifacts"))
     artifacts = artifact_api.search_artifacts(extraction["id"], query) if query else artifact_api.list_artifacts(extraction["id"])
 
     _render_artifact_tabs(extraction, artifacts)

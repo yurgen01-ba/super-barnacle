@@ -4,12 +4,18 @@ import os
 
 import streamlit as st
 
-from repositories.user_repository import user_repository
+from repositories.user_repository import UserRepositoryError, user_repository
 from services.email_notification_service import email_notification_service
 from ui_v2.i18n import t
 
 
 LOCAL_USER_KEY = "project_brain_local_user"
+
+
+def _error_text(exc: Exception) -> str:
+    if isinstance(exc, UserRepositoryError):
+        return t(exc.code, str(exc))
+    return str(exc)
 
 
 def _oidc_claim(name: str, default=None):
@@ -88,7 +94,7 @@ def _provider_configured(provider: str) -> bool:
 
 def _render_email_login():
     with st.form("email_login_form"):
-        email = st.text_input("Email", key="auth_login_email")
+        email = st.text_input(t("email"), key="auth_login_email")
         password = st.text_input(
             t("password"),
             type="password",
@@ -100,16 +106,16 @@ def _render_email_login():
         try:
             user = user_repository.authenticate(email, password)
         except ValueError as exc:
-            st.error(str(exc))
+            st.error(_error_text(exc))
             return
         if not user:
-            st.error("Неверный email или пароль.")
+            st.error(t("invalid_credentials"))
             return
         st.session_state[LOCAL_USER_KEY] = user
         st.rerun()
-    with st.expander("Не пришло письмо подтверждения?", expanded=False):
-        resend_email = st.text_input("Email для повторной отправки", key="auth_resend_email")
-        if st.button("Отправить письмо повторно", key="auth_resend_button"):
+    with st.expander(t("verification_missing"), expanded=False):
+        resend_email = st.text_input(t("resend_email"), key="auth_resend_email")
+        if st.button(t("resend"), key="auth_resend_button"):
             token = user_repository.create_verification_token(resend_email)
             user = user_repository.get_by_email(resend_email)
             if token and user:
@@ -124,17 +130,17 @@ def _render_email_login():
                     st.error(f"Письмо не отправлено: {exc}")
                 else:
                     if sent:
-                        st.success("Новое письмо отправлено. Ссылка действует 24 часа.")
+                        st.success(t("resend_sent"))
                     else:
-                        st.error("SMTP не настроен.")
+                        st.error(t("smtp_missing"))
             else:
-                st.info("Если неподтверждённый аккаунт существует, на него будет отправлено письмо.")
+                st.info(t("resend_safe"))
 
 
 def _render_email_registration():
     with st.form("email_registration_form"):
         name = st.text_input(t("name"), key="auth_register_name")
-        email = st.text_input("Email", key="auth_register_email")
+        email = st.text_input(t("email"), key="auth_register_email")
         password = st.text_input(
             t("password"),
             type="password",
@@ -147,16 +153,16 @@ def _render_email_registration():
             placeholder="8+ chars: Aa, 1, !",
             key="auth_register_confirmation",
         )
-        st.caption("Минимум 8 символов: латинская буква, цифра и спецсимвол; без пробелов и кириллицы.")
+        st.caption(t("password_policy"))
         submitted = st.form_submit_button(t("sign_up"), type="primary", width="stretch")
     if submitted:
         if password != confirmation:
-            st.error("Пароли не совпадают.")
+            st.error(t("passwords_mismatch"))
             return
         try:
             user = user_repository.register(email=email, password=password, name=name)
         except ValueError as exc:
-            st.error(str(exc))
+            st.error(_error_text(exc))
             return
         token = user.pop("_verification_token")
         base_url = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
@@ -171,9 +177,9 @@ def _render_email_registration():
             st.error(f"Аккаунт создан, но письмо не отправлено: {exc}")
             return
         if sent:
-            st.success("Проверьте почту и подтвердите регистрацию по ссылке. Ссылка действует 24 часа.")
+            st.success(t("verify_check_mail"))
         else:
-            st.error("SMTP не настроен: письмо подтверждения не отправлено.")
+            st.error(t("smtp_missing"))
 
 
 def _handle_email_verification() -> None:
@@ -183,9 +189,9 @@ def _handle_email_verification() -> None:
     verified = user_repository.verify_email(token)
     del st.query_params["verify_token"]
     if verified:
-        st.success("Email подтверждён. Теперь можно войти в аккаунт.")
+        st.success(t("verify_success"))
     else:
-        st.error("Ссылка подтверждения недействительна или истекла.")
+        st.error(t("verify_invalid"))
 
 
 def render_auth_gate() -> bool:
@@ -234,5 +240,5 @@ def render_auth_gate() -> bool:
             ):
                 st.login("facebook")
         if not google_ready or not facebook_ready:
-            st.caption("Социальный вход станет доступен после добавления OAuth/OIDC-ключей в секреты приложения.")
+            st.caption(t("social_setup"))
     return False

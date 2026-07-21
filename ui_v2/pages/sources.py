@@ -20,7 +20,7 @@ def render_sources(memory_repository):
         current_index = 0
 
     selected_label = st.radio(
-        "Source type",
+        t("source_type"),
         labels,
         index=current_index,
         horizontal=True,

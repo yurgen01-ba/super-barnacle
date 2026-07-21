@@ -35,4 +35,4 @@ def render_source_adapter(source_key: str, memory_repository):
     elif source_key == "files":
         render_files_tab(memory_repository)
     else:
-        st.warning(f"Unknown source: {source_key}")
+        st.warning(t("unknown_source", source=source_key))

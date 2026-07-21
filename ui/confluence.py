@@ -6,6 +6,7 @@ from repositories.memory_repository import MemoryRepository
 from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
 from ui_v2.auth import get_authenticated_email
+from ui_v2.i18n import t
 
 
 def _render_active_job(project_id: str):
@@ -13,7 +14,7 @@ def _render_active_job(project_id: str):
     active_job = service.latest(active_only=True, project_id=project_id)
 
     if active_job:
-        st.info("Knowledge extraction is running in background. You can switch tabs and return later.")
+        st.info(t("background_processing"))
         render_job_status(active_job.id)
         return active_job
 
@@ -26,12 +27,12 @@ def _render_active_job(project_id: str):
 
 def render_confluence_tab(memory_repository: MemoryRepository):
     project_id = get_current_project_id()
-    st.header("Confluence Articles")
-    st.caption("Paste Confluence article text or exported page text and extract Project Memory items.")
+    st.header(t("confluence_articles"))
+    st.caption(t("confluence_caption"))
 
-    article_title = st.text_input("Article title", placeholder="Example: Wallet Service Overview", key="confluence_ingest_article_title")
+    article_title = st.text_input(t("article_title"), placeholder="Wallet Service Overview", key="confluence_ingest_article_title")
     confluence_text = st.text_area(
-        "Paste Confluence article text",
+        t("paste_confluence"),
         height=350,
         placeholder="Paste article content, tables copied as text, requirements, decision logs, or architecture pages...",
         key="confluence_ingest_article_text",
@@ -41,9 +42,9 @@ def render_confluence_tab(memory_repository: MemoryRepository):
     if active_job:
         return
 
-    if st.button("Process Confluence article", key="process_confluence_article_button", type="primary"):
+    if st.button(t("process_confluence"), key="process_confluence_article_button", type="primary"):
         if not confluence_text.strip():
-            st.warning("Paste Confluence article text first.")
+            st.warning(t("paste_confluence_warning"))
             return
 
         title = article_title.strip() or "Confluence article"
@@ -62,5 +63,5 @@ def render_confluence_tab(memory_repository: MemoryRepository):
         )
 
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success("Обработка Confluence запущена. Окно можно закрыть — после завершения придёт письмо.")
+        st.success(t("processing_started_email"))
         st.rerun()

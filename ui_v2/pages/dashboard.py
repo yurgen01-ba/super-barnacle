@@ -10,11 +10,11 @@ from ui_v2.state import get_current_project_id, get_dashboard_loader, set_dashbo
 
 
 def _latest_changes(project_id: str):
-    st.subheader("Последние изменения")
-    st.caption("Важные события проекта. Раскройте строку, чтобы увидеть полный журнал.")
+    st.subheader(t("recent_changes"))
+    st.caption(t("recent_changes_caption"))
     events = workspace_repository.list_events(project_id, limit=20)
     if not events:
-        st.info("Событий пока нет. Загрузите первый источник данных.")
+        st.info(t("no_events"))
         return
 
     icons = {
@@ -26,17 +26,34 @@ def _latest_changes(project_id: str):
     }
     for event in events:
         created_at = str(event.get("created_at") or "")
+        raw_title = str(event.get("title") or "")
+        if raw_title.startswith("Добавлен источник:"):
+            event_title = t("event_source_added", name=raw_title.split(":", 1)[1].strip())
+        else:
+            event_title = t(
+                {
+                    "Проект создан": "event_project_created",
+                    "Проект переименован": "event_project_renamed",
+                    "Настройки проекта обновлены": "event_settings_updated",
+                    "Запущена обработка файлов": "event_files_started",
+                    "Обработаны загруженные файлы": "event_files_processed",
+                    "Созданы артефакты расшифровки": "event_transcript_artifacts",
+                    "Запущена обработка видео": "event_video_started",
+                    "AI-артефакт создан": "event_ai_artifact_created",
+                }.get(raw_title, "event_unknown"),
+                default=raw_title,
+            )
         label = (
             f"{icons.get(event['event_type'], '•')} "
-            f"{created_at[:16]} · {event['title']}"
+            f"{created_at[:16]} · {event_title}"
         )
         with st.expander(label, expanded=False):
-            st.caption(f"Тип события: {event['event_type']}")
+            st.caption(f"{t('event_type')}: {event['event_type']}")
             details = event.get("details") or {}
             if details:
                 st.json(details)
             else:
-                st.text("Дополнительных данных нет")
+                st.text(t("no_event_details"))
 
 
 def _source_card(title: str, caption: str, key: str, loader: str):
@@ -51,7 +68,7 @@ def _source_card(title: str, caption: str, key: str, loader: str):
     )
 
     is_open = get_dashboard_loader() == loader
-    if st.button("Свернуть" if is_open else "Открыть", key=key, width="stretch"):
+    if st.button(t("collapse") if is_open else t("open"), key=key, width="stretch"):
         set_dashboard_loader(None if is_open else loader)
         st.rerun()
 
@@ -82,39 +99,39 @@ def render_dashboard(memory_repository):
     project_id = get_current_project_id()
     metrics = workspace_repository.dashboard_metrics(project_id)
     st.title(t("workspace"))
-    st.caption("Обзор состояния проекта и загрузка данных")
+    st.caption(t("workspace_caption"))
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.metric(
-            "Состояние знаний",
+            t("knowledge_health"),
             f"{metrics['knowledge_health']}%",
             f"{metrics['knowledge_items']} элементов знаний",
             help="Расчёт учитывает количество источников, извлечённых элементов знаний и готовых артефактов.",
         )
 
     with col2:
-        st.metric("Источники данных", str(metrics["sources"]), "в текущем проекте")
+        st.metric(t("data_sources"), str(metrics["sources"]), t("in_current_project"))
 
     with col3:
-        st.metric("Артефактов создано", str(metrics["artifacts"]), "готовы к просмотру")
+        st.metric(t("artifacts_created"), str(metrics["artifacts"]), t("ready_to_view"))
 
     _latest_changes(project_id)
 
-    st.markdown("### Загрузка данных")
-    st.caption("Карточки ниже открывают существующие рабочие загрузчики внутри нового Dashboard.")
+    st.markdown(f"### {t('data_upload')}")
+    st.caption(t("data_upload_caption"))
 
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        _source_card("Встречи", "Видео/аудио встреч, транскрипт, vision и facts.", "dash_upload_meeting", "meetings")
+        _source_card(t("meetings"), t("meetings_card"), "dash_upload_meeting", "meetings")
     with c2:
-        _source_card("Slack", "Импорт сообщений и обсуждений.", "dash_import_slack", "slack")
+        _source_card("Slack", t("slack_card"), "dash_import_slack", "slack")
     with c3:
-        _source_card("Confluence", "Страницы, статьи и документация.", "dash_import_confluence", "confluence")
+        _source_card("Confluence", t("confluence_card"), "dash_import_confluence", "confluence")
     with c4:
-        _source_card("Jira", "Задачи, комментарии и статусы.", "dash_import_jira", "jira")
+        _source_card("Jira", t("jira_card"), "dash_import_jira", "jira")
 
     if get_dashboard_loader() is not None:
         with st.container(border=True, key="dashboard_active_loader"):

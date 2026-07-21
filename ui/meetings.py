@@ -10,6 +10,7 @@ from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
 from ui_v2.auth import get_authenticated_email
 from ui_v2.state import get_current_project_id, set_current_page
+from ui_v2.i18n import t
 
 
 def _stage_uploaded_files(uploaded_files, prefix: str) -> list[dict[str, str]]:
@@ -27,7 +28,7 @@ def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
     active_job = service.latest(active_only=True, project_id=project_id)
     if active_job:
-        st.info("Обработка идёт в фоне. Можно перейти в другой раздел и вернуться позже.")
+        st.info(t("background_processing"))
         render_job_status(active_job.id)
         return active_job
     latest_job = service.latest(active_only=False, project_id=project_id)
@@ -98,38 +99,40 @@ def _start_meeting_processing(uploaded_videos, settings: dict, project_id: str, 
     )
 
 
-@st.dialog("Участники разговора")
 def _participant_dialog(uploaded_videos, settings: dict, project_id: str):
-    st.caption("Укажите имена в порядке SPEAKER_00, SPEAKER_01 и далее. Их можно будет увидеть в разделе «Участники».")
-    count = st.number_input("Количество участников", min_value=1, max_value=10, value=2, step=1)
-    names = [
-        st.text_input(f"SPEAKER_{index:02d}", key=f"meeting_participant_{index}")
-        for index in range(int(count))
-    ]
-    if st.button("Начать расшифровку", type="primary", width="stretch"):
-        clean_names = [" ".join(name.split()) for name in names]
-        if any(not name for name in clean_names):
-            st.error("Заполните имя каждого участника.")
-            return
-        _start_meeting_processing(uploaded_videos, settings, project_id, clean_names)
-        st.success("Обработка запущена. Окно можно закрыть — после завершения придёт письмо.")
-        st.rerun()
+    @st.dialog(t("conversation_participants"))
+    def dialog_content():
+        st.caption(t("participants_dialog_caption"))
+        count = st.number_input(t("participant_count"), min_value=1, max_value=10, value=2, step=1)
+        names = [
+            st.text_input(f"SPEAKER_{index:02d}", key=f"meeting_participant_{index}")
+            for index in range(int(count))
+        ]
+        if st.button(t("start_transcription"), type="primary", width="stretch"):
+            clean_names = [" ".join(name.split()) for name in names]
+            if any(not name for name in clean_names):
+                st.error(t("fill_participants"))
+                return
+            _start_meeting_processing(uploaded_videos, settings, project_id, clean_names)
+            st.success(t("processing_started_email"))
+            st.rerun()
+    dialog_content()
 
 
 def render_meetings_tab(memory_repository: MemoryRepository):
     project_id = get_current_project_id()
     settings = workspace_repository.get_settings(project_id)
 
-    st.header("Анализ видео встреч")
-    st.caption("Параметры обработки перенесены в раздел «Настройки».")
+    st.header(t("meeting_analysis"))
+    st.caption(t("meeting_caption"))
 
     uploaded_videos = st.file_uploader(
-        "Загрузите одно или несколько видео",
+        t("upload_videos"),
         type=["mp4", "mov", "mkv"],
         accept_multiple_files=True,
     )
 
-    with st.expander("Настройки, которые будут применены", expanded=False):
+    with st.expander(t("applied_settings"), expanded=False):
         st.write({
             "language": settings.get("language") or "auto",
             "canonical_facts": settings.get("extract_canonical_facts"),
@@ -139,7 +142,7 @@ def render_meetings_tab(memory_repository: MemoryRepository):
             "screen_interval_seconds": settings.get("screen_interval_seconds"),
             "max_extracted_frames": "автоматически по длительности видео, не более 30",
         })
-        if st.button("Открыть настройки", key="meetings_open_settings"):
+        if st.button(t("open_settings"), key="meetings_open_settings"):
             set_current_page("settings")
             st.rerun()
 
@@ -147,8 +150,8 @@ def render_meetings_tab(memory_repository: MemoryRepository):
     if active_job:
         return
 
-    if st.button("Обработать видео", type="primary"):
+    if st.button(t("process_video"), type="primary"):
         if not uploaded_videos:
-            st.warning("Сначала загрузите хотя бы одно видео.")
+            st.warning(t("choose_video_warning"))
             return
         _participant_dialog(uploaded_videos, settings, project_id)

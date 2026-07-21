@@ -33,9 +33,10 @@ def _switch_theme():
 
 
 def render_topbar():
+    user = get_authenticated_user() or {}
     project_id = get_current_project_id()
     metrics = workspace_repository.dashboard_metrics(project_id)
-    projects = workspace_repository.list_projects()
+    projects = workspace_repository.list_projects(user["id"])
     project_ids = [project["id"] for project in projects]
     project_names = {project["id"]: project["name"] for project in projects}
     st.session_state["ui_v2_topbar_project"] = project_id

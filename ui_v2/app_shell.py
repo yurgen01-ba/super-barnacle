@@ -4,6 +4,7 @@ from PIL import Image
 from memory.db import init_db
 from memory.fact_schema import init_fact_schema
 from repositories.memory_repository import MemoryRepository
+from repositories.workspace_repository import workspace_repository
 from ui_v2.design import inject_ui_v2_theme
 from ui_v2.auth import get_authenticated_user, render_auth_gate
 from ui_v2.i18n import set_language
@@ -30,6 +31,9 @@ def render_app_shell_v2():
         return
 
     user = get_authenticated_user() or {}
+    workspace_repository.ensure_user_workspace(
+        user["id"], user.get("email", ""), user.get("name", "")
+    )
     if st.session_state.get("pb_preferences_user") != user.get("id"):
         if user.get("preferred_language"):
             set_language(user["preferred_language"])
