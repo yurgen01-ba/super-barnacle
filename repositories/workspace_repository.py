@@ -17,7 +17,7 @@ DEFAULT_PROJECT_NAME = "OrgMeter"
 
 DEFAULT_MEETING_SETTINGS = {
     "slack_messages_per_chunk": 12,
-    "language": "ru",
+    "language": None,
     "extract_canonical_facts": True,
     "fact_extractor_model": "qwen2.5:7b",
     "fact_extractor_host": "http://localhost:11434",

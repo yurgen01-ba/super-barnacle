@@ -43,6 +43,14 @@ class WorkspaceIsolationTests(unittest.TestCase):
         )
         self.assertEqual("Named workspace", created["name"])
 
+    def test_new_project_uses_automatic_transcription_language_by_default(self):
+        project = self.repository.ensure_user_workspace("user-a", "a@example.com", "A")
+
+        self.assertIsNone(self.repository.get_settings(project["id"])["language"])
+
+        self.repository.save_settings(project["id"], {"language": "ru"})
+        self.assertEqual("ru", self.repository.get_settings(project["id"])["language"])
+
     def test_cross_user_project_mutation_is_rejected(self):
         first = self.repository.ensure_user_workspace("user-a", "a@example.com", "A")
         self.repository.ensure_user_workspace("user-b", "b@example.com", "B")
