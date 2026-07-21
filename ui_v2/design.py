@@ -1670,7 +1670,10 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 position: absolute;
                 z-index: 2;
                 left: 0;
-                bottom: 12px;
+                /* The transparent favicon canvas adds ~8px below the visible
+                   contour at this size, so a small negative offset leaves a
+                   visual 3–4px gap above the progress line. */
+                bottom: -4px;
                 width: 52px;
                 height: 38px;
                 background: #ff4b4b;
