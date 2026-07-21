@@ -20,8 +20,8 @@ from repositories.workspace_repository import workspace_repository
 from services.artifact_service import artifact_service
 from services.participant_extraction_service import (
     extract_participants_from_text,
-    save_manual_participants,
 )
+from services.speaker_sample_service import create_speaker_samples
 from utils.text import chunk_text
 
 
@@ -405,11 +405,7 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
 
         uploaded_file = StagedUploadedFile(path=spec["path"], name=spec["name"])
         runtime_settings = dict(settings)
-        participant_names = [
-            " ".join(str(name).split())
-            for name in runtime_settings.pop("participant_names", [])
-            if str(name).strip()
-        ]
+        runtime_settings.pop("participant_names", None)
 
         if progress:
             audio_callback, vision_callback, fact_callback = _make_meeting_progress_callbacks(
@@ -430,29 +426,13 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
             project_id=project_id,
             **runtime_settings,
         )
-        if participant_names:
-            speaker_map = {
-                f"SPEAKER_{index:02d}": name
-                for index, name in enumerate(participant_names)
-            }
-
-            def replace_speakers(value):
-                if isinstance(value, str):
-                    for speaker, participant in speaker_map.items():
-                        value = value.replace(speaker, participant)
-                    return value
-                if isinstance(value, list):
-                    return [replace_speakers(item) for item in value]
-                if isinstance(value, dict):
-                    return {key: replace_speakers(item) for key, item in value.items()}
-                return value
-
-            result = replace_speakers(result)
-            save_manual_participants(
-                names=participant_names,
-                project_id=project_id,
-                source_ref=spec["name"],
-            )
+        speaker_samples = create_speaker_samples(
+            spec["path"],
+            result,
+            project_id=project_id,
+            job_id=job.id if job else "manual",
+            file_name=spec["name"],
+        )
 
         if progress:
             progress.update(_progress_between((index - 1) / total, 1 / total, 0.90), "meeting:saving", f"{spec['name']}: saving full transcript and extracted knowledge")
@@ -470,6 +450,7 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
             "result": result,
             "transcript_save_result": transcript_save_result,
             "screen_save_result": screen_save_result,
+            "speaker_samples": speaker_samples,
         })
 
         if progress:

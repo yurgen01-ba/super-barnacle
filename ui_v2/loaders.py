@@ -8,7 +8,7 @@ from ui_v2.assets import logo_data_uri
 from ui_v2.i18n import t
 
 
-def render_intro_loader(duration: float = 2.8) -> None:
+def render_intro_loader(duration: float = 3.55) -> None:
     placeholder = st.empty()
     placeholder.markdown(
         f"""

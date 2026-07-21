@@ -30,6 +30,19 @@ class WorkspaceIsolationTests(unittest.TestCase):
         self.assertEqual([second["id"]], [p["id"] for p in self.repository.list_projects("user-b")])
         self.assertIsNone(self.repository.get_project(first["id"], "user-b"))
 
+    def test_new_user_can_wait_for_named_project_onboarding(self):
+        project = self.repository.ensure_user_workspace(
+            "new-user", "new@example.com", "New User", create_if_missing=False
+        )
+
+        self.assertIsNone(project)
+        self.assertEqual([], self.repository.list_projects("new-user"))
+
+        created = self.repository.create_project(
+            "Named workspace", "new-user", "new@example.com", "New User"
+        )
+        self.assertEqual("Named workspace", created["name"])
+
     def test_cross_user_project_mutation_is_rejected(self):
         first = self.repository.ensure_user_workspace("user-a", "a@example.com", "A")
         self.repository.ensure_user_workspace("user-b", "b@example.com", "B")
@@ -38,6 +51,19 @@ class WorkspaceIsolationTests(unittest.TestCase):
             self.repository.rename_project(first["id"], "Stolen", "user-b")
 
         self.assertEqual("OrgMeter", self.repository.get_project(first["id"], "user-a")["name"])
+
+    def test_clear_project_data_preserves_project_team_and_settings(self):
+        project = self.repository.ensure_user_workspace("owner", "owner@example.com", "Owner")
+        self.repository.add_member(project["id"], "owner", email="member@example.com")
+        self.repository.save_settings(project["id"], {"language": "en"})
+        self.repository.log_event(project["id"], "source", "Uploaded")
+
+        self.repository.clear_project_data(project["id"], "owner")
+
+        self.assertIsNotNone(self.repository.get_project(project["id"], "owner"))
+        self.assertEqual(2, len(self.repository.list_members(project["id"], "owner")))
+        self.assertEqual("en", self.repository.get_settings(project["id"])["language"])
+        self.assertEqual([], self.repository.list_events(project["id"]))
 
     def test_owner_can_share_block_restore_and_remove_access(self):
         project = self.repository.ensure_user_workspace("owner", "owner@example.com", "Owner")

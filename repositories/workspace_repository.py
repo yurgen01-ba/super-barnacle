@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from datetime import datetime
+from pathlib import Path
 from uuid import uuid4
 
 from memory.db import get_connection, init_db
@@ -97,7 +99,15 @@ class WorkspaceRepository:
         if "owner_user_id" not in project_columns:
             cur.execute("ALTER TABLE projects ADD COLUMN owner_user_id TEXT")
         project_count = cur.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
-        if not project_count:
+        existing_tables = {
+            row[0] for row in cur.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+        legacy_data_count = sum(
+            cur.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in ("knowledge", "timeline", "documents")
+            if table in existing_tables
+        )
+        if not project_count and legacy_data_count:
             cur.execute(
                 "INSERT INTO projects (id, name) VALUES (?, ?)",
                 (DEFAULT_PROJECT_ID, DEFAULT_PROJECT_NAME),
@@ -136,8 +146,10 @@ class WorkspaceRepository:
         conn.commit()
         conn.close()
 
-    def ensure_user_workspace(self, user_id: str, email: str = "", name: str = "") -> dict:
-        """Claim legacy projects once, then guarantee a private workspace."""
+    def ensure_user_workspace(
+        self, user_id: str, email: str = "", name: str = "", *, create_if_missing: bool = True
+    ) -> dict | None:
+        """Bind invitations/legacy projects and optionally create a private workspace."""
         if not user_id:
             raise ValueError("User id is required")
         conn = self._connect()
@@ -205,7 +217,7 @@ class WorkspaceRepository:
                         """,
                         (user_id, owner_email, name, user_id),
                     )
-                else:
+                elif create_if_missing:
                     project_id = str(uuid4())
                     conn.execute(
                         "INSERT INTO projects (id, name, owner_user_id) VALUES (?, ?, ?)",
@@ -219,7 +231,8 @@ class WorkspaceRepository:
                         (project_id, user_id, normalized_email or f"owner:{user_id}", name),
                     )
         conn.close()
-        return self.list_projects(user_id)[0]
+        projects = self.list_projects(user_id)
+        return projects[0] if projects else None
 
     def list_projects(self, user_id: str) -> list[dict]:
         if not user_id:
@@ -326,6 +339,36 @@ class WorkspaceRepository:
         conn.close()
         artifact_repository.delete_by_project(project_id)
         extraction_repository.delete_by_project(project_id)
+
+    def clear_project_data(self, project_id: str, user_id: str) -> None:
+        """Delete project content while preserving the project, settings and team."""
+        if not self.is_owner(project_id, user_id):
+            raise PermissionError("Only the project owner can delete project data")
+        conn = self._connect()
+        cur = conn.cursor()
+        preserved = {"projects", "project_members", "project_settings"}
+        tables = [
+            row[0] for row in cur.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            ).fetchall()
+        ]
+        if "chunks" in tables and "documents" in tables:
+            cur.execute(
+                "DELETE FROM chunks WHERE document_id IN (SELECT id FROM documents WHERE project_id = ?)",
+                (project_id,),
+            )
+        for table in tables:
+            if table in preserved or not re.fullmatch(r"[A-Za-z0-9_]+", table):
+                continue
+            columns = {row[1] for row in cur.execute(f"PRAGMA table_info({table})").fetchall()}
+            if "project_id" in columns:
+                cur.execute(f"DELETE FROM {table} WHERE project_id = ?", (project_id,))
+        conn.commit()
+        conn.close()
+        artifact_repository.delete_by_project(project_id)
+        extraction_repository.delete_by_project(project_id)
+        safe_id = re.sub(r"[^A-Za-z0-9_.-]+", "_", project_id)[:120]
+        shutil.rmtree(Path("data/speaker_samples") / safe_id, ignore_errors=True)
 
     def is_owner(self, project_id: str, user_id: str) -> bool:
         conn = self._connect()
@@ -483,21 +526,24 @@ class WorkspaceRepository:
             "SELECT COUNT(*) FROM knowledge WHERE project_id = ?", (project_id,)
         ).fetchone()[0]
         conn.close()
-        all_artifact_count = artifact_repository.count_by_project(project_id)
         user_artifact_count = artifact_repository.count_user_generated_by_project(project_id)
         # A transparent readiness score: sources establish coverage, extracted
-        # knowledge and artifacts establish usable depth.
+        # knowledge and user-requested AI artifacts establish usable depth.
+        source_score = min(source_count, 5) * 10
+        knowledge_score = min(knowledge_count, 50)
+        artifact_score = min(user_artifact_count, 10) * 2
         readiness = min(
             100,
-            (min(source_count, 5) * 10)
-            + (min(knowledge_count, 50) * 1)
-            + (min(all_artifact_count, 10) * 2),
+            source_score + knowledge_score + artifact_score,
         )
         return {
             "knowledge_health": readiness,
             "sources": source_count,
             "knowledge_items": knowledge_count,
             "artifacts": user_artifact_count,
+            "source_score": source_score,
+            "knowledge_score": knowledge_score,
+            "artifact_score": artifact_score,
         }
 
 

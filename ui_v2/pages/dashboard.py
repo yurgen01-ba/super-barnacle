@@ -6,7 +6,6 @@ from ui.jira import render_jira_tab
 from ui.meetings import render_meetings_tab
 from ui.slack import render_slack_tab
 from repositories.workspace_repository import workspace_repository
-from ui_v2.assets import nav_icon_data_uri, svg_data_uri
 from ui_v2.state import get_current_project_id, get_dashboard_loader, set_dashboard_loader
 
 
@@ -57,25 +56,14 @@ def _latest_changes(project_id: str):
                 st.text(t("no_event_details"))
 
 
-def _source_card(title: str, caption: str, key: str, loader: str, icon_uri: str):
-    st.markdown(
-        f"""
-        <div class="pb-source-card" title="{caption}">
-            <div class="pb-source-title">
-                <span class="pb-source-icon" style="--pb-source-icon-url:url('{icon_uri}')"></span>{title}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+def _source_card(title: str, caption: str, loader: str):
     is_open = get_dashboard_loader() == loader
+    state = "active" if is_open else "idle"
     if st.button(
-        t("collapse") if is_open else t("open"),
-        key=key,
-        width="stretch",
+        title,
+        key=f"pb_source_card_{loader}_{state}",
         help=caption,
-        icon=":material/expand_less:" if is_open else ":material/upload:",
+        width="stretch",
     ):
         set_dashboard_loader(None if is_open else loader)
         st.rerun()
@@ -103,11 +91,21 @@ def render_dashboard(memory_repository):
     col1, col2, col3 = st.columns(3)
 
     with col1:
+        knowledge_help = t(
+            "knowledge_health_help",
+            total=metrics["knowledge_health"],
+            sources=metrics["sources"],
+            source_score=metrics["source_score"],
+            knowledge=metrics["knowledge_items"],
+            knowledge_score=metrics["knowledge_score"],
+            artifacts=metrics["artifacts"],
+            artifact_score=metrics["artifact_score"],
+        )
         st.metric(
             t("knowledge_health"),
             f"{metrics['knowledge_health']}%",
             f"{metrics['knowledge_items']} элементов знаний",
-            help="Расчёт учитывает количество источников, извлечённых элементов знаний и готовых артефактов.",
+            help=knowledge_help,
         )
 
     with col2:
@@ -125,18 +123,16 @@ def render_dashboard(memory_repository):
 
     with c1:
         _source_card(
-            t("meetings"), t("meetings_card"), "dash_upload_meeting", "meetings",
-            nav_icon_data_uri("meetings"),
+            t("meetings"), t("meetings_card"), "meetings",
         )
     with c2:
-        _source_card("Slack", t("slack_card"), "dash_import_slack", "slack", svg_data_uri("slack"))
+        _source_card("Slack", t("slack_card"), "slack")
     with c3:
         _source_card(
-            "Confluence", t("confluence_card"), "dash_import_confluence", "confluence",
-            svg_data_uri("confluence"),
+            "Confluence", t("confluence_card"), "confluence",
         )
     with c4:
-        _source_card("Jira", t("jira_card"), "dash_import_jira", "jira", svg_data_uri("jira"))
+        _source_card("Jira", t("jira_card"), "jira")
 
     if get_dashboard_loader() is not None:
         with st.container(border=True, key="dashboard_active_loader"):

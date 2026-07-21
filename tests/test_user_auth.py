@@ -25,7 +25,10 @@ class UserAuthenticationTests(unittest.TestCase):
         return self.repository.authenticate(email, password)
 
     def test_password_policy(self):
-        invalid = ["short!1", "Пароль!1A", "Password1", "Password!", "Pass word1!"]
+        invalid = [
+            "short!1", "Пароль!1A", "Password1", "Password!", "Pass word1!",
+            "lowercase1!", "UPPERCASE1!",
+        ]
         for password in invalid:
             with self.subTest(password=password), self.assertRaises(ValueError):
                 self.repository.validate_password(password)
@@ -78,6 +81,29 @@ class EmailEncodingTests(unittest.TestCase):
         message = captured[0]
         self.assertEqual("utf-8", message.get_content_charset())
         self.assertIn("Здравствуйте", message.get_content())
+
+    def test_project_invitation_email_is_sent(self):
+        service = EmailNotificationService()
+        service.host = "smtp.example.test"
+        service.sender = "robot@example.test"
+        service.username = ""
+        service.use_tls = False
+        captured = []
+
+        class FakeSmtp:
+            def __init__(self, *args, **kwargs): pass
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def send_message(self, message): captured.append(message)
+
+        with patch("services.email_notification_service.smtplib.SMTP", FakeSmtp):
+            sent = service.send_project_invitation(
+                recipient="member@example.test", inviter_name="Owner",
+                project_name="OrgMeter", invitation_url="https://example.test",
+            )
+        self.assertTrue(sent)
+        self.assertEqual("member@example.test", captured[0]["To"])
+        self.assertIn("OrgMeter", captured[0].get_content())
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ from uuid import uuid4
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 PBKDF2_ITERATIONS = 310_000
-PASSWORD_RE = re.compile(r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])[\x21-\x7E]{8,}$")
+PASSWORD_RE = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])[\x21-\x7E]{8,}$")
 
 
 class UserRepositoryError(ValueError):
@@ -101,8 +101,8 @@ class UserRepository:
         if not PASSWORD_RE.fullmatch(password or ""):
             raise UserRepositoryError(
                 "password_policy",
-                "Пароль должен содержать не менее 8 символов: латинскую букву, "
-                "цифру и специальный символ. Кириллица и пробелы не допускаются."
+                "Пароль должен содержать не менее 8 символов: заглавную и строчную "
+                "латинские буквы, цифру и специальный символ. Кириллица и пробелы не допускаются."
             )
 
     def register(self, email: str, password: str, name: str = "") -> dict:

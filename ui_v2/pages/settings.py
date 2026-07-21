@@ -8,7 +8,7 @@ from repositories.workspace_repository import workspace_repository
 from ui_v2.auth import get_authenticated_user
 from ui_v2.components.html import title
 from ui_v2.i18n import t
-from ui_v2.state import get_current_project_id
+from ui_v2.state import get_current_project_id, set_current_page
 
 
 LANGUAGES = {
@@ -36,6 +36,30 @@ def render_settings():
     settings = workspace_repository.get_settings(project_id)
 
     title(t("settings"), t("settings_caption"))
+    diagnostics_col, model_col = st.columns(2)
+    with diagnostics_col:
+        if st.button(t("speech_quality"), key="settings_open_speech_quality", icon=":material/mic:", width="stretch"):
+            set_current_page("transcription_diagnostics")
+            st.rerun()
+    with model_col:
+        if st.button(t("project_model"), key="settings_open_project_model", icon=":material/deployed_code:", width="stretch"):
+            set_current_page("project_model")
+            st.rerun()
+
+    if workspace_repository.is_owner(project_id, user["id"]):
+        @st.dialog(t("delete_all_data"))
+        def confirm_clear_project_data():
+            st.warning(t("delete_all_data_warning"))
+            yes_col, cancel_col = st.columns(2)
+            with yes_col:
+                if st.button(t("yes_delete_all"), key="confirm_clear_project_data", type="primary", width="stretch"):
+                    workspace_repository.clear_project_data(project_id, user["id"])
+                    st.session_state.pop("latest_knowledge_extraction_job_id", None)
+                    st.success(t("all_project_data_deleted"))
+                    st.rerun()
+            with cancel_col:
+                if st.button(t("cancel"), key="cancel_clear_project_data", width="stretch"):
+                    st.rerun()
 
     if workspace_repository.is_owner(project_id, user["id"]):
         with st.form("project_identity_settings"):
@@ -261,3 +285,10 @@ def render_settings():
                 host=settings.get("vision_host"),
                 model=settings.get("vision_model"),
             ))
+
+    if workspace_repository.is_owner(project_id, user["id"]):
+        st.divider()
+        st.subheader(t("danger_zone"))
+        st.caption(t("delete_all_data_caption"))
+        if st.button(t("delete_all_data"), key="clear_project_data", type="primary"):
+            confirm_clear_project_data()

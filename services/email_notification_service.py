@@ -58,6 +58,19 @@ class EmailNotificationService:
         )
         return self.send(recipient=recipient, subject=subject, body=body)
 
+    def send_project_invitation(
+        self, *, recipient: str, inviter_name: str, project_name: str, invitation_url: str
+    ) -> bool:
+        subject = f"Project Brain: приглашение в проект «{project_name}»"
+        body = (
+            f"Здравствуйте!\n\n"
+            f"{inviter_name or 'Пользователь Project Brain'} приглашает вас в проект "
+            f"«{project_name}».\n\n"
+            f"Откройте Project Brain и войдите с адресом {recipient}:\n{invitation_url}\n\n"
+            "После входа проект появится в вашем списке проектов."
+        )
+        return self.send(recipient=recipient, subject=subject, body=body)
+
     def notify_job_finished(self, job) -> bool:
         recipient = str((job.metadata or {}).get("notification_email") or "").strip()
         if not recipient:

@@ -9,10 +9,13 @@ from transcription.model_diagnostics import get_transcription_model_diagnostics
 from repositories.artifact_repository import artifact_repository
 from repositories.extraction_repository import extraction_repository
 from ui_v2.i18n import t
-from ui_v2.state import get_current_project_id
+from ui_v2.state import get_current_project_id, set_current_page
 
 
 def render_transcription_diagnostics(project_id: str | None = None):
+    if st.button(t("back"), key="speech_quality_back_to_settings", icon=":material/arrow_back:"):
+        set_current_page("settings")
+        st.rerun()
     project_id = project_id or get_current_project_id()
     st.subheader("Audio Intelligence Backend")
     c1,c2,c3,c4=st.columns(4)

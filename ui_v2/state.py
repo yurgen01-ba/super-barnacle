@@ -26,11 +26,9 @@ def get_current_project_id() -> str:
     if not user:
         return DEFAULT_PROJECT
     user_id = user["id"]
-    workspace_repository.ensure_user_workspace(
-        user_id, user.get("email", ""), user.get("name", "")
-    )
+    projects = workspace_repository.list_projects(user_id)
     if "ui_v2_project" not in st.session_state:
-        st.session_state.ui_v2_project = workspace_repository.list_projects(user_id)[0]["id"]
+        st.session_state.ui_v2_project = projects[0]["id"] if projects else DEFAULT_PROJECT
     project_id = st.session_state.ui_v2_project
     if not workspace_repository.get_project(project_id, user_id):
         projects = workspace_repository.list_projects(user_id)

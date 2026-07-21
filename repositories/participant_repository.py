@@ -102,5 +102,67 @@ class ParticipantRepository:
             result.append(item)
         return result
 
+    def set_meeting_speaker_name(
+        self, *, project_id: str, source_ref: str, speaker: str, name: str
+    ) -> None:
+        """Persist the editable display name for one diarized speaker."""
+        clean_name = " ".join(str(name or "").split()).strip(" :;,-")
+        if len(clean_name) < 2 or len(clean_name) > 120:
+            return
+        connection = get_connection()
+        connection.execute(
+            """
+            DELETE FROM participants
+            WHERE project_id = ? AND source_type = 'meeting'
+              AND source_ref = ? AND role = ?
+            """,
+            (project_id, source_ref, speaker),
+        )
+        connection.execute(
+            """
+            INSERT INTO participants(project_id, name, source_type, source_ref, role, metadata_json)
+            VALUES (?, ?, 'meeting', ?, ?, ?)
+            """,
+            (
+                project_id,
+                clean_name,
+                source_ref,
+                speaker,
+                json.dumps({"speaker": speaker}, ensure_ascii=False),
+            ),
+        )
+        connection.commit()
+        connection.close()
+
+    def meeting_speaker_names(self, project_id: str) -> dict[tuple[str, str], str]:
+        connection = get_connection()
+        rows = connection.execute(
+            """
+            SELECT source_ref, role, name FROM participants
+            WHERE project_id = ? AND source_type = 'meeting' AND role IS NOT NULL
+            ORDER BY updated_at DESC
+            """,
+            (project_id,),
+        ).fetchall()
+        connection.close()
+        return {
+            (str(row["source_ref"]), str(row["role"])): str(row["name"])
+            for row in rows
+        }
+
+    def list_meeting_speakers(self, project_id: str) -> list[dict]:
+        connection = get_connection()
+        rows = connection.execute(
+            """
+            SELECT id, name, source_ref, role, updated_at
+            FROM participants
+            WHERE project_id = ? AND source_type = 'meeting' AND role IS NOT NULL
+            ORDER BY source_ref COLLATE NOCASE, role COLLATE NOCASE
+            """,
+            (project_id,),
+        ).fetchall()
+        connection.close()
+        return [dict(row) for row in rows]
+
 
 participant_repository = ParticipantRepository()

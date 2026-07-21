@@ -1,26 +1,55 @@
 import streamlit as st
-from PIL import Image
 
 from memory.db import init_db
 from memory.fact_schema import init_fact_schema
 from repositories.memory_repository import MemoryRepository
 from repositories.workspace_repository import workspace_repository
-from ui_v2.assets import LOGO_PATH
+from ui_v2.assets import favicon_image
 from ui_v2.auth import get_authenticated_user, render_auth_gate
 from ui_v2.design import inject_ui_v2_theme
-from ui_v2.i18n import set_language
+from ui_v2.i18n import set_language, t
 from ui_v2.layout.chat import render_chat_panel
 from ui_v2.layout.menu import render_menu
 from ui_v2.layout.topbar import render_topbar, render_user_controls
 from ui_v2.loaders import render_intro_loader, render_transition_loader
 from ui_v2.pages.page_registry import render_current_page
-from ui_v2.state import get_current_project_id
+from ui_v2.state import get_current_project_id, set_current_page, set_current_project
+
+
+def _render_project_onboarding(user: dict) -> None:
+    @st.dialog(t("create_first_project"), width="medium")
+    def _dialog() -> None:
+        st.caption(t("create_first_project_caption"))
+        with st.form("first_project_form"):
+            project_name = st.text_input(
+                t("project_name"), placeholder=t("project_name_placeholder"),
+                key="first_project_name",
+            )
+            submitted = st.form_submit_button(
+                t("create_project_and_continue"), type="primary", width="stretch"
+            )
+        if submitted:
+            try:
+                project = workspace_repository.create_project(
+                    project_name,
+                    user["id"],
+                    user.get("email", ""),
+                    user.get("name", ""),
+                )
+            except ValueError:
+                st.error(t("project_name_required"))
+                return
+            set_current_project(project["id"])
+            set_current_page("dashboard")
+            st.rerun()
+
+    _dialog()
 
 
 def render_app_shell_v2():
     st.set_page_config(
         page_title="Project Brain",
-        page_icon=Image.open(LOGO_PATH),
+        page_icon=favicon_image(),
         layout="wide",
         initial_sidebar_state="collapsed",
     )
@@ -40,11 +69,14 @@ def render_app_shell_v2():
 
     user = get_authenticated_user() or {}
     workspace_repository.ensure_user_workspace(
-        user["id"], user.get("email", ""), user.get("name", "")
+        user["id"], user.get("email", ""), user.get("name", ""), create_if_missing=False
     )
+    if not workspace_repository.list_projects(user["id"]):
+        _render_project_onboarding(user)
+        return
 
     if not st.session_state.get("pb_intro_seen"):
-        render_intro_loader(duration=2.8)
+        render_intro_loader(duration=3.55)
         st.session_state.pb_intro_seen = True
 
     if st.session_state.pop("pb_page_transition", False):

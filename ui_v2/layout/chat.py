@@ -17,8 +17,6 @@ def _set_prompt(prompt: str):
 def _render_artifact_area(memory_repository):
     selected = get_chat_artifact()
 
-    st.caption(t("artifact_context_caption"))
-
     col1, col2 = st.columns(2)
 
     with col1:
@@ -78,15 +76,6 @@ def render_chat_panel(memory_repository=None):
     tab_chat, tab_artifacts = st.tabs([t("chat"), t("artifacts")])
 
     with tab_chat:
-        st.markdown(
-            f"""
-            <div class="pb-chat-bubble">
-                {t('chat_intro')}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
         prompts = [(t(f"prompt_{index}"), t(f"prompt_{index}")) for index in range(1, 5)]
 
         for label, prompt in prompts:

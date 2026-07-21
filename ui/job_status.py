@@ -44,7 +44,7 @@ def _render_result_summary(result):
             st.write(result)
 
 
-def _render_job_status_body(job_id: str | None):
+def _render_job_status_body(job_id: str | None, completed_renderer=None):
     if not job_id:
         st.info(t("no_running_job"))
         return
@@ -86,18 +86,20 @@ def _render_job_status_body(job_id: str | None):
 
     if job.status == RunningJobStatus.COMPLETED:
         _render_result_summary(job.result)
+        if completed_renderer:
+            completed_renderer(job)
 
 
 if hasattr(st, "fragment"):
     @st.fragment(run_every="2s")
-    def _render_job_status_fragment(job_id: str | None):
-        _render_job_status_body(job_id)
+    def _render_job_status_fragment(job_id: str | None, completed_renderer=None):
+        _render_job_status_body(job_id, completed_renderer)
 else:
-    def _render_job_status_fragment(job_id: str | None):
-        _render_job_status_body(job_id)
+    def _render_job_status_fragment(job_id: str | None, completed_renderer=None):
+        _render_job_status_body(job_id, completed_renderer)
 
 
-def render_job_status(job_id: str | None):
+def render_job_status(job_id: str | None, completed_renderer=None):
     """
     Render persistent job status.
 
@@ -105,7 +107,7 @@ def render_job_status(job_id: str | None):
     On Streamlit versions with st.fragment, status updates automatically every 2 seconds.
     On older Streamlit versions, the job still keeps running and status updates on normal page reruns.
     """
-    _render_job_status_fragment(job_id)
+    _render_job_status_fragment(job_id, completed_renderer)
 
 
 def render_latest_job_status(job_type: str):

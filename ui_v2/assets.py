@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 from pathlib import Path
+from PIL import Image, ImageFilter
 
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
@@ -19,6 +20,23 @@ def file_data_uri(path: str | Path) -> str:
 
 def logo_data_uri() -> str:
     return file_data_uri(LOGO_PATH)
+
+
+def favicon_image() -> Image.Image:
+    """Return a thick black logo contour on a transparent background."""
+    source = Image.open(LOGO_PATH).convert("L")
+    alpha = source.point(lambda value: 255 if value > 72 else 0)
+    alpha = alpha.filter(ImageFilter.MaxFilter(9))
+    bounds = alpha.getbbox()
+    if bounds:
+        alpha = alpha.crop(bounds)
+    side = max(alpha.size) + 96
+    canvas = Image.new("L", (side, side), 0)
+    canvas.paste(alpha, ((side - alpha.width) // 2, (side - alpha.height) // 2))
+    canvas = canvas.resize((128, 128), Image.Resampling.LANCZOS)
+    icon = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+    icon.putalpha(canvas)
+    return icon
 
 
 def svg_data_uri(name: str) -> str:
@@ -38,7 +56,7 @@ _NAV_ICONS = {
     "exports": '<path d="M11 3h2v11l4-4 1.5 1.5L12 18l-6.5-6.5L7 10l4 4zM4 20h16v2H4z"/>',
     "meetings": '<path d="M4 5h16v15H4zM7 2h2v6H7zM15 2h2v6h-2zM7 11h4v3H7zM13 11h4v3h-4z"/>',
     "files": '<path d="M5 2h9l5 5v15H5zM13 3v6h5" fill="none" stroke="currentColor" stroke-width="2"/>',
-    "settings": '<path d="m12 2 2 3 4-.3.8 3.9 3.2 2-2 3.4 1.2 3.8-3.8 1.2-2 3.2-3.4-2-3.4 2-2-3.2-3.8-1.2L6 14l-2-3.4 3.2-2L8 4.7l4 .3z"/><circle cx="12" cy="12" r="3" fill="#0A0A0B"/>',
+    "settings": '<path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96a7.2 7.2 0 0 0-1.62-.94l-.36-2.54a.49.49 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.31-.09.65-.09.94s.02.63.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58ZM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2Z" fill-rule="evenodd"/>',
     "model": '<path d="M12 2 3 7v10l9 5 9-5V7zM3.5 7 12 12l8.5-5M12 12v10" fill="none" stroke="currentColor" stroke-width="2"/>',
 }
 

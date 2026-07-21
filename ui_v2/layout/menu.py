@@ -51,9 +51,7 @@ def render_menu():
     with st.container(key="pb_navigation"):
         _nav(t("projects"), "projects")
         _nav(t("workspace"), "dashboard")
-        _nav(t("sources"), "sources")
         _nav(t("participants"), "participants")
-        _nav(t("speech_quality"), "transcription_diagnostics")
         if st.button(
             t("artifacts"),
             key="ui_v2_nav_artifacts",
@@ -73,4 +71,3 @@ def render_menu():
 
         st.caption(t("project_section"))
         _nav(t("settings"), "settings")
-        _nav(t("project_model"), "project_model")

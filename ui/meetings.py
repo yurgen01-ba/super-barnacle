@@ -1,11 +1,15 @@
+import base64
+import html
 from pathlib import Path
 import tempfile
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from jobs.extraction_tasks import process_meeting_videos_job
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
+from repositories.participant_repository import participant_repository
 from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
 from ui_v2.auth import get_authenticated_email
@@ -24,20 +28,111 @@ def _stage_uploaded_files(uploaded_files, prefix: str) -> list[dict[str, str]]:
     return specs
 
 
+def _job_speaker_samples(job) -> list[dict]:
+    samples = []
+    for item in (job.result or {}).get("results", []):
+        samples.extend(item.get("speaker_samples") or [])
+    return samples
+
+
+def _audio_sample(sample: dict, element_id: str) -> None:
+    path = Path(str(sample.get("clip_path") or ""))
+    if not path.is_file():
+        st.caption(t("speaker_sample_unavailable"))
+        return
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    play = html.escape(t("play"))
+    stop = html.escape(t("stop"))
+    components.html(
+        f"""
+        <style>
+          body {{ margin:0; background:transparent; font-family:Inter,Arial,sans-serif; }}
+          .controls {{ display:flex; gap:8px; align-items:center; }}
+          button {{ border:1px solid #6b7280; border-radius:10px; padding:7px 14px;
+                    background:transparent; color:#9ca3af; cursor:pointer; font-size:14px; }}
+          button:hover {{ color:#ff4b4b; border-color:#ff4b4b; }}
+        </style>
+        <audio id="{element_id}" preload="metadata" src="data:audio/wav;base64,{encoded}"></audio>
+        <div class="controls">
+          <button onclick="document.getElementById('{element_id}').play()">▶ {play}</button>
+          <button onclick="const a=document.getElementById('{element_id}');a.pause();a.currentTime=0">■ {stop}</button>
+        </div>
+        """,
+        height=48,
+    )
+
+
+def _speaker_dialog(job, project_id: str) -> None:
+    samples = _job_speaker_samples(job)
+    saved = participant_repository.meeting_speaker_names(project_id)
+
+    @st.dialog(t("conversation_participants"), width="large")
+    def dialog_content():
+        st.caption(t("participants_after_processing_caption"))
+        values = []
+        for index, sample in enumerate(samples):
+            source_ref = str(sample.get("file_name") or "")
+            speaker = str(sample.get("speaker") or f"SPEAKER_{index:02d}")
+            st.markdown(f"**{html.escape(speaker)}** · {html.escape(source_ref)}")
+            name_col, audio_col = st.columns([0.58, 0.42], vertical_alignment="center")
+            with name_col:
+                name = st.text_input(
+                    t("participant_name"),
+                    value=saved.get((source_ref, speaker), ""),
+                    key=f"speaker_name_{job.id}_{index}",
+                    label_visibility="collapsed",
+                    placeholder=t("participant_name"),
+                )
+            with audio_col:
+                _audio_sample(sample, f"speaker-audio-{job.id}-{index}")
+            values.append((source_ref, speaker, name))
+        if st.button(t("save_participant_names"), type="primary", width="stretch"):
+            clean_values = [(source, speaker, " ".join(name.split())) for source, speaker, name in values]
+            if any(not name for _, _, name in clean_values):
+                st.error(t("fill_participants"))
+                return
+            for source_ref, speaker, name in clean_values:
+                participant_repository.set_meeting_speaker_name(
+                    project_id=project_id,
+                    source_ref=source_ref,
+                    speaker=speaker,
+                    name=name,
+                )
+            job.metadata["participant_names_saved"] = True
+            st.success(t("participant_names_saved"))
+            st.rerun()
+
+    dialog_content()
+
+
+def _completed_speaker_controls(project_id: str):
+    def render(job):
+        samples = _job_speaker_samples(job)
+        if not samples:
+            return
+        opened_key = f"speaker_dialog_opened_{job.id}"
+        if st.button(t("edit_participant_names"), key=f"edit_speakers_{job.id}"):
+            _speaker_dialog(job, project_id)
+        elif not st.session_state.get(opened_key):
+            st.session_state[opened_key] = True
+            _speaker_dialog(job, project_id)
+    return render
+
+
 def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
     active_job = service.latest(active_only=True, project_id=project_id)
     if active_job:
         st.info(t("background_processing"))
-        render_job_status(active_job.id)
+        render_job_status(active_job.id, _completed_speaker_controls(project_id))
         return active_job
     latest_job = service.latest(active_only=False, project_id=project_id)
     if latest_job:
-        render_job_status(latest_job.id)
+        render_job_status(latest_job.id, _completed_speaker_controls(project_id))
     return None
 
 
-def _start_meeting_processing(uploaded_videos, settings: dict, project_id: str, participant_names: list[str]):
+def _start_meeting_processing(uploaded_videos, settings: dict, project_id: str):
     file_specs = _stage_uploaded_files(
         uploaded_videos,
         prefix="project_brain_meeting_stage_",
@@ -72,7 +167,6 @@ def _start_meeting_processing(uploaded_videos, settings: dict, project_id: str, 
         "diarization_correction_enabled": bool(settings.get("diarization_correction_enabled", True)),
         "diarization_min_new_run_words": int(settings.get("diarization_min_new_run_words", 2)),
         "diarization_min_new_run_seconds": float(settings.get("diarization_min_new_run_seconds", 0.65)),
-        "participant_names": participant_names,
         "vision_progress_callback": None,
         "audio_progress_callback": None,
         "fact_progress_callback": None,
@@ -88,7 +182,6 @@ def _start_meeting_processing(uploaded_videos, settings: dict, project_id: str, 
             "source": "meetings",
             "project_id": project_id,
             "files": [spec["name"] for spec in file_specs],
-            "participants": participant_names,
             "notification_email": get_authenticated_email(),
         },
     )
@@ -100,29 +193,8 @@ def _start_meeting_processing(uploaded_videos, settings: dict, project_id: str, 
         {
             "job_id": job.id,
             "files": [spec["name"] for spec in file_specs],
-            "participants": participant_names,
         },
     )
-
-
-def _participant_dialog(uploaded_videos, settings: dict, project_id: str):
-    @st.dialog(t("conversation_participants"))
-    def dialog_content():
-        st.caption(t("participants_dialog_caption"))
-        count = st.number_input(t("participant_count"), min_value=1, max_value=10, value=2, step=1)
-        names = [
-            st.text_input(f"SPEAKER_{index:02d}", key=f"meeting_participant_{index}")
-            for index in range(int(count))
-        ]
-        if st.button(t("start_transcription"), type="primary", width="stretch"):
-            clean_names = [" ".join(name.split()) for name in names]
-            if any(not name for name in clean_names):
-                st.error(t("fill_participants"))
-                return
-            _start_meeting_processing(uploaded_videos, settings, project_id, clean_names)
-            st.success(t("processing_started_email"))
-            st.rerun()
-    dialog_content()
 
 
 def render_meetings_tab(memory_repository: MemoryRepository):
@@ -160,4 +232,6 @@ def render_meetings_tab(memory_repository: MemoryRepository):
         if not uploaded_videos:
             st.warning(t("choose_video_warning"))
             return
-        _participant_dialog(uploaded_videos, settings, project_id)
+        _start_meeting_processing(uploaded_videos, settings, project_id)
+        st.success(t("processing_started_email"))
+        st.rerun()

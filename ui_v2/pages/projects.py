@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from html import escape
+import os
 
 import streamlit as st
 
 from repositories.workspace_repository import workspace_repository
 from repositories.user_repository import user_repository
+from services.email_notification_service import email_notification_service
 from ui_v2.auth import get_authenticated_user
 from ui_v2.i18n import t
 from ui_v2.state import get_current_project_id, set_current_page, set_current_project
@@ -37,9 +39,21 @@ def _render_project_team(project_id: str, owner_user_id: str, current_user_id: s
                     user_id=account["id"] if account else None,
                     name=account.get("name", "") if account else "",
                 )
-                st.success(t("member_added"))
+                project = workspace_repository.get_project(project_id, current_user_id)
+                inviter = get_authenticated_user() or {}
+                base_url = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
+                sent = email_notification_service.send_project_invitation(
+                    recipient=str(email).strip().lower(),
+                    inviter_name=str(inviter.get("name") or inviter.get("email") or ""),
+                    project_name=str(project.get("name") or "Project Brain"),
+                    invitation_url=base_url,
+                )
+                if not sent:
+                    st.warning(t("member_added_email_failed"))
+                    return
+                st.success(t("member_added_email_sent"))
                 st.rerun()
-            except (ValueError, PermissionError) as exc:
+            except Exception as exc:
                 st.error(str(exc))
 
     members = workspace_repository.list_members(project_id, current_user_id)
@@ -144,15 +158,24 @@ def render_projects():
             with knowledge_col:
                 st.markdown(f'<div class="pb-table-cell">{metrics["knowledge_health"]}%</div>', unsafe_allow_html=True)
             with action_col:
-                if st.button(
-                    t("open") if project_id != current_id else t("opened"),
-                    key=f"project_enter_{project_id}",
-                    type="primary" if project_id != current_id else "secondary",
-                    width="stretch",
-                    disabled=project_id == current_id,
-                ):
-                    _enter_project(project_id)
-                    st.rerun()
+                open_col, settings_col = st.columns([0.72, 0.28], gap="small", vertical_alignment="center")
+                with open_col:
+                    if st.button(
+                        t("open") if project_id != current_id else t("opened"),
+                        key=f"project_enter_{project_id}",
+                        type="primary" if project_id != current_id else "secondary",
+                        width="stretch", disabled=project_id == current_id,
+                    ):
+                        _enter_project(project_id)
+                        st.rerun()
+                with settings_col:
+                    if st.button(
+                        " ", key=f"project_settings_{project_id}",
+                        help=t("settings"), width="stretch", icon=":material/settings:",
+                    ):
+                        set_current_project(project_id)
+                        set_current_page("settings")
+                        st.rerun()
 
             with st.expander(t("management"), expanded=False):
                 is_owner = project["owner_user_id"] == user_id

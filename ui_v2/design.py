@@ -22,6 +22,18 @@ def inject_ui_v2_theme(theme: str = "dark"):
         .st-key-pb_navigation div[data-testid="stButton"] button p,
         .st-key-pb_navigation div[data-testid="stButton"] button span {
             color: #343840 !important;
+            -webkit-text-fill-color: #343840 !important;
+        }
+        .st-key-pb_navigation div[data-testid="stButton"] button:hover,
+        .st-key-pb_navigation div[data-testid="stButton"] button:hover p,
+        .st-key-pb_navigation div[data-testid="stButton"] button:hover span {
+            color: #15171A !important;
+            -webkit-text-fill-color: #15171A !important;
+        }
+        .st-key-pb_navigation div[data-testid="stButton"] button::before,
+        .st-key-pb_navigation div[data-testid="stButton"] button:hover::before {
+            background-color: #343840 !important;
+            color: #343840 !important;
         }
         .st-key-pb_navigation div[data-testid="stButton"] button[kind="primary"],
         .st-key-pb_navigation div[data-testid="stButton"] button[kind="primary"] p {
@@ -56,9 +68,12 @@ def inject_ui_v2_theme(theme: str = "dark"):
             color: #15171A !important;
             -webkit-text-fill-color: #15171A !important;
         }
-        div[data-testid="stExpander"],
-        div[data-testid="stExpander"] details,
-        div[data-testid="stExpander"] summary,
+        html body div[data-testid="stExpander"],
+        html body div[data-testid="stExpander"] details,
+        html body div[data-testid="stExpander"] summary,
+        html body details[data-testid="stExpander"],
+        html body details[data-testid="stExpander"] > summary,
+        html body details[data-testid="stExpander"] > div,
         .st-key-pb_topbar,
         .pb-panel,
         .pb-source-card,
@@ -66,6 +81,12 @@ def inject_ui_v2_theme(theme: str = "dark"):
             background: #FFFFFF !important;
             color: #15171A !important;
             border-color: #D6DAE1 !important;
+        }
+        html body details[data-testid="stExpander"] > summary *,
+        html body div[data-testid="stExpander"] summary * {
+            background: transparent !important;
+            color: #343840 !important;
+            -webkit-text-fill-color: #343840 !important;
         }
         div[data-testid="stMetric"] {
             background: #FFFFFF !important;
@@ -249,6 +270,17 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 border: 1px solid var(--pb-border) !important;
                 background: rgba(24,24,27,0.78) !important;
                 color: var(--pb-muted) !important;
+            }
+
+            div[data-testid="stTabs"] [role="tablist"] {
+                display: flex !important;
+                width: 100% !important;
+            }
+
+            div[data-testid="stTabs"] [role="tab"] {
+                flex: 1 1 0 !important;
+                justify-content: center !important;
+                text-align: center !important;
             }
 
             div[data-testid="stTabs"] button[aria-selected="true"] {
@@ -493,7 +525,15 @@ def inject_ui_v2_theme(theme: str = "dark"):
             .pb-knowledge-indicator {
                 display: flex;
                 align-items: center;
+                justify-content: flex-end;
+                min-height: 2.55rem;
                 gap: 0.65rem;
+                transform: translateY(-0.32rem);
+                white-space: nowrap;
+            }
+
+            .st-key-pb_topbar [data-testid="stMarkdownContainer"] p {
+                margin: 0 !important;
             }
 
             .pb-knowledge-value {
@@ -612,8 +652,14 @@ def inject_ui_v2_theme(theme: str = "dark"):
 
             .pb-current-badge {
                 display: inline-flex;
+                align-items: center;
                 margin-left: 0.45rem;
-                padding: 0.12rem 0.4rem;
+                padding: 0.18rem 0.45rem;
+                min-height: 0 !important;
+                height: 1.35rem !important;
+                max-height: 1.35rem !important;
+                box-sizing: border-box !important;
+                line-height: 1.05 !important;
                 border: 1px solid #52525B;
                 border-radius: 999px;
                 color: #A1A1AA;
@@ -1308,17 +1354,26 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 margin: 0 !important;
                 border: 0 !important;
                 border-radius: 0 9px 9px 0 !important;
-                background: {'#FFFFFF' if light else 'rgba(24,24,27,.96)'} !important;
+                background: transparent !important;
                 color: var(--pb-muted) !important;
+                border-left: 1px solid var(--pb-border) !important;
                 box-shadow: none !important;
                 transform: none !important;
             }}
 
             html body div.stApp div[data-testid="stTextInput"] button:hover {{
-                background: rgba(127,127,127,.1) !important;
+                background: color-mix(in srgb, var(--pb-text-2) 8%, transparent) !important;
                 color: var(--pb-text) !important;
                 box-shadow: none !important;
                 transform: none !important;
+            }}
+
+            html body div.stApp div[data-testid="stTextInput"] button svg,
+            html body div.stApp div[data-testid="stTextInput"] button:hover svg {{
+                color: currentColor !important;
+                fill: none !important;
+                stroke: currentColor !important;
+                opacity: 1 !important;
             }}
 
             .st-key-auth_google button::before,
@@ -1504,6 +1559,87 @@ def inject_ui_v2_theme(theme: str = "dark"):
 
             {light_overrides}
 
+            /* The source card itself is the control; there is no nested
+               open/collapse button. */
+            html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button {{
+                width: 100% !important;
+                min-height: 76px !important;
+                padding: 1rem !important;
+                justify-content: flex-start !important;
+                gap: .7rem !important;
+                border: 1px solid var(--pb-border) !important;
+                border-radius: 16px !important;
+                background: var(--pb-panel) !important;
+                color: var(--pb-text) !important;
+                box-shadow: none !important;
+                transform: none !important;
+                cursor: pointer !important;
+                transition: background-color .2s ease, border-color .2s ease,
+                    box-shadow .2s ease, transform .2s ease !important;
+            }}
+
+            html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button:hover {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-text) !important;
+                border-color: color-mix(in srgb, var(--pb-text-2) 32%, var(--pb-border)) !important;
+            }}
+
+            html body [class*="st-key-pb_source_card_"][class*="_active"] [data-testid="stButton"] button,
+            html body [class*="st-key-pb_source_card_"][class*="_active"] [data-testid="stButton"] button:hover {{
+                background: color-mix(in srgb, #3B82F6 14%, var(--pb-panel)) !important;
+                border-color: rgba(59, 130, 246, .72) !important;
+                box-shadow: 0 0 0 1px rgba(59, 130, 246, .14),
+                    0 10px 30px rgba(59, 130, 246, .10) !important;
+            }}
+
+            html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button::before {{
+                content: "";
+                display: inline-flex;
+                flex: 0 0 1.15rem;
+                width: 1.15rem;
+                height: 1.15rem;
+                background: currentColor !important;
+                mask-position: center;
+                mask-repeat: no-repeat;
+                mask-size: contain;
+            }}
+
+            [class*="st-key-pb_source_card_meetings_"] button::before {{ mask-image: url('{nav_icons['meetings']}'); }}
+            [class*="st-key-pb_source_card_slack_"] button::before {{ mask-image: url('{slack_icon}'); }}
+            [class*="st-key-pb_source_card_confluence_"] button::before {{ mask-image: url('{confluence_icon}'); }}
+            [class*="st-key-pb_source_card_jira_"] button::before {{ mask-image: url('{jira_icon}'); }}
+
+            html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button p {{
+                margin: 0 !important;
+                color: currentColor !important;
+                -webkit-text-fill-color: currentColor !important;
+                font-weight: 720 !important;
+            }}
+
+            /* Streamlit adds its own dark hover to expander summaries.  Keep
+               all expander states inside the active application theme. */
+            html body div[data-testid="stExpander"],
+            html body div[data-testid="stExpander"] > details,
+            html body div[data-testid="stExpander"] > details > summary,
+            html body div[data-testid="stExpander"] > details > summary:hover,
+            html body div[data-testid="stExpander"] > details[open] > summary,
+            html body div[data-testid="stExpander"] > details > div {{
+                background: var(--pb-panel) !important;
+                color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            html body div[data-testid="stExpander"] > details > summary:hover {{
+                background: var(--pb-panel-2) !important;
+            }}
+
+            html body div[data-testid="stExpander"] > details > summary *,
+            html body div[data-testid="stExpander"] > details > summary:hover * {{
+                background: transparent !important;
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+            }}
+
             .st-key-pb_user_controls [data-testid="stHorizontalBlock"] {{
                 justify-content: flex-end !important;
                 align-items: center !important;
@@ -1547,13 +1683,16 @@ def inject_ui_v2_theme(theme: str = "dark"):
             }}
 
             .pb-project-label {{
-                display: block;
+                display: flex;
+                align-items: center;
+                min-height: 2.55rem;
                 color: var(--pb-muted) !important;
                 font-size: .78rem !important;
                 font-weight: 750;
                 letter-spacing: .06em;
                 text-transform: uppercase;
                 white-space: nowrap;
+                transform: translateY(-0.32rem);
             }}
 
             .st-key-pb_topbar [data-testid="stSelectbox"] {{

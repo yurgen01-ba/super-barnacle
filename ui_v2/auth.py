@@ -11,6 +11,7 @@ from ui_v2.i18n import LANGUAGE_LABELS, get_language, set_language, t
 
 
 LOCAL_USER_KEY = "project_brain_local_user"
+PENDING_VERIFICATION_EMAIL_KEY = "pb_pending_verification_email"
 
 
 def _cycle_public_language() -> None:
@@ -145,16 +146,23 @@ def _render_email_login():
         try:
             user = user_repository.authenticate(email, password)
         except ValueError as exc:
+            if isinstance(exc, UserRepositoryError) and exc.code == "email_not_verified":
+                st.session_state[PENDING_VERIFICATION_EMAIL_KEY] = user_repository.normalize_email(email)
             st.error(_error_text(exc))
             return
         if not user:
             st.error(t("invalid_credentials"))
             return
         st.session_state[LOCAL_USER_KEY] = user
+        st.session_state.pop(PENDING_VERIFICATION_EMAIL_KEY, None)
         st.rerun()
     with st.expander(t("verification_missing"), expanded=False):
-        resend_email = st.text_input(t("resend_email"), key="auth_resend_email")
-        if st.button(t("resend"), key="auth_resend_button"):
+        resend_email = user_repository.normalize_email(
+            st.session_state.get(PENDING_VERIFICATION_EMAIL_KEY) or email
+        )
+        if resend_email:
+            st.caption(t("resend_destination", email=resend_email))
+        if st.button(t("resend"), key="auth_resend_button", disabled=not resend_email):
             token = user_repository.create_verification_token(resend_email)
             user = user_repository.get_by_email(resend_email)
             if token and user:
@@ -183,13 +191,13 @@ def _render_email_registration():
         password = st.text_input(
             t("password"),
             type="password",
-            placeholder="8+ chars: Aa, 1, !",
+            placeholder=t("password_placeholder"),
             key="auth_register_password",
         )
         confirmation = st.text_input(
             t("repeat_password"),
             type="password",
-            placeholder="8+ chars: Aa, 1, !",
+            placeholder=t("password_placeholder"),
             key="auth_register_confirmation",
         )
         st.caption(t("password_policy"))
@@ -203,6 +211,7 @@ def _render_email_registration():
         except ValueError as exc:
             st.error(_error_text(exc))
             return
+        st.session_state[PENDING_VERIFICATION_EMAIL_KEY] = user["email"]
         token = user.pop("_verification_token")
         base_url = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
         verification_url = f"{base_url}/?verify_token={token}"
