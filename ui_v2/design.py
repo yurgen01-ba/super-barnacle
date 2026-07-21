@@ -1434,17 +1434,17 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 position: relative;
                 display: grid;
                 place-items: center;
-                flex: 0 0 112px;
-                width: 112px;
-                height: 112px;
+                flex: 0 0 168px;
+                width: 168px;
+                height: 168px;
                 margin-bottom: 3rem;
             }}
             .pb-loader-logo {{
                 position: relative;
                 z-index: 2;
-                width: 92px;
-                height: 92px;
-                border-radius: 28px;
+                width: 138px;
+                height: 138px;
+                border-radius: 42px;
                 overflow: hidden;
                 background: var(--pb-bg);
             }}
