@@ -6,10 +6,49 @@ import streamlit as st
 
 from repositories.user_repository import UserRepositoryError, user_repository
 from services.email_notification_service import email_notification_service
-from ui_v2.i18n import t
+from ui_v2.assets import logo_data_uri
+from ui_v2.i18n import LANGUAGE_LABELS, get_language, set_language, t
 
 
 LOCAL_USER_KEY = "project_brain_local_user"
+
+
+def _cycle_public_language() -> None:
+    languages = list(LANGUAGE_LABELS)
+    current = get_language()
+    language = languages[(languages.index(current) + 1) % len(languages)]
+    set_language(language)
+    st.session_state.pb_auth_language = language
+    st.session_state.pb_language_select = language
+
+
+def _toggle_public_theme() -> None:
+    theme = "light" if st.session_state.get("pb_theme", "dark") == "dark" else "dark"
+    st.session_state.pb_theme = theme
+    st.session_state.pb_theme_select = theme
+
+
+def _render_public_preferences() -> None:
+    _, controls = st.columns([1, 0.12], vertical_alignment="center")
+    with controls:
+        with st.container(key="pb_preferences_toolbar"):
+            language_col, theme_col = st.columns(2, gap=None, vertical_alignment="center")
+            with language_col:
+                current_language = get_language()
+                st.button(
+                    "🌐",
+                    key="pb_auth_language_cycle",
+                    help=f"{t('language')}: {t('language_' + current_language)}",
+                    on_click=_cycle_public_language,
+                )
+            with theme_col:
+                theme = st.session_state.get("pb_theme", "dark")
+                st.button(
+                    "☀" if theme == "dark" else "☾",
+                    key="pb_auth_theme_toggle",
+                    help=t("switch_to_light" if theme == "dark" else "switch_to_dark"),
+                    on_click=_toggle_public_theme,
+                )
 
 
 def _error_text(exc: Exception) -> str:
@@ -199,12 +238,14 @@ def render_auth_gate() -> bool:
     if get_authenticated_user():
         return True
 
+    _render_public_preferences()
+
     left, center, right = st.columns([0.28, 0.44, 0.28])
     with center:
         st.markdown(
             f"""
             <div class="pb-auth-heading">
-                <div class="pb-auth-logo" aria-label="Project Brain"></div>
+                <div class="pb-auth-logo"><img src="{logo_data_uri()}" alt="Project Brain"></div>
                 <h1>Project Brain</h1>
                 <p>{t('login_intro')}</p>
             </div>

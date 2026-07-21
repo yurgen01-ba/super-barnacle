@@ -116,8 +116,15 @@ class WorkspaceRepository:
         cur.execute(
             """
             INSERT OR IGNORE INTO project_members(project_id, user_id, email, name, role, status)
-            SELECT id, owner_user_id, 'owner:' || owner_user_id, name, 'owner', 'active'
-            FROM projects WHERE owner_user_id IS NOT NULL
+            SELECT p.id, p.owner_user_id, 'owner:' || p.owner_user_id, p.name, 'owner', 'active'
+            FROM projects p
+            WHERE p.owner_user_id IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM project_members m
+                  WHERE m.project_id = p.id
+                    AND m.user_id = p.owner_user_id
+                    AND m.role = 'owner'
+              )
             """
         )
         conn.commit()
@@ -131,6 +138,26 @@ class WorkspaceRepository:
         with conn:
             normalized_email = str(email or "").strip().lower()
             if normalized_email:
+                conn.execute(
+                    """
+                    DELETE FROM project_members
+                    WHERE user_id = ? AND role = 'owner' AND email LIKE 'owner:%'
+                      AND project_id IN (
+                          SELECT project_id FROM project_members
+                          WHERE user_id = ? AND role = 'owner' AND lower(email) = ?
+                      )
+                    """,
+                    (user_id, user_id, normalized_email),
+                )
+                conn.execute(
+                    """
+                    DELETE FROM project_members
+                    WHERE lower(email) = ?
+                      AND project_id IN (SELECT id FROM projects WHERE owner_user_id = ?)
+                      AND NOT (user_id = ? AND role = 'owner')
+                    """,
+                    (normalized_email, user_id, user_id),
+                )
                 conn.execute(
                     """
                     UPDATE project_members SET user_id = ?, name = COALESCE(NULLIF(?, ''), name),

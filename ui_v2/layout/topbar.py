@@ -16,17 +16,21 @@ def _switch_project():
         st.session_state.pop("selected_artifact_id", None)
 
 
-def _switch_language():
-    language = st.session_state.get("pb_language_select", "en")
+def _cycle_language():
+    languages = list(LANGUAGE_LABELS)
+    current = get_language()
+    language = languages[(languages.index(current) + 1) % len(languages)]
     set_language(language)
+    st.session_state.pb_language_select = language
     user = get_authenticated_user() or {}
     if user.get("id"):
         user_repository.update_preferences(user["id"], language=language)
 
 
-def _switch_theme():
-    theme = st.session_state.get("pb_theme_select", "dark")
+def _toggle_theme():
+    theme = "light" if st.session_state.get("pb_theme", "dark") == "dark" else "dark"
     st.session_state.pb_theme = theme
+    st.session_state.pb_theme_select = theme
     user = get_authenticated_user() or {}
     if user.get("id"):
         user_repository.update_preferences(user["id"], theme=theme)
@@ -42,8 +46,8 @@ def render_topbar():
     st.session_state["ui_v2_topbar_project"] = project_id
 
     with st.container(key="pb_topbar"):
-        project_col, status_col, language_col, theme_col, user_col = st.columns(
-            [0.32, 0.18, 0.14, 0.12, 0.24],
+        project_col, status_col, preferences_col, user_col = st.columns(
+            [0.34, 0.18, 0.12, 0.36],
             vertical_alignment="center",
         )
         with project_col:
@@ -65,31 +69,25 @@ def render_topbar():
                 """,
                 unsafe_allow_html=True,
             )
-        with language_col:
-            current_language = get_language()
-            if "pb_language_select" not in st.session_state:
-                st.session_state.pb_language_select = current_language
-            st.selectbox(
-                t("language"),
-                list(LANGUAGE_LABELS),
-                format_func=lambda value: LANGUAGE_LABELS[value],
-                key="pb_language_select",
-                on_change=_switch_language,
-                label_visibility="collapsed",
-            )
-        with theme_col:
-            user = get_authenticated_user() or {}
-            preferred_theme = user.get("preferred_theme") or st.session_state.get("pb_theme", "dark")
-            if "pb_theme_select" not in st.session_state:
-                st.session_state.pb_theme_select = preferred_theme
-            st.selectbox(
-                t("theme"),
-                ["dark", "light"],
-                format_func=lambda value: "☾" if value == "dark" else "☀",
-                key="pb_theme_select",
-                on_change=_switch_theme,
-                label_visibility="collapsed",
-            )
+        with preferences_col:
+            with st.container(key="pb_topbar_preferences"):
+                language_col, theme_col = st.columns(2, gap=None, vertical_alignment="center")
+                with language_col:
+                    current_language = get_language()
+                    st.button(
+                        "🌐",
+                        key="pb_language_cycle",
+                        help=f"{t('language')}: {t('language_' + current_language)}",
+                        on_click=_cycle_language,
+                    )
+                with theme_col:
+                    theme = st.session_state.get("pb_theme", "dark")
+                    st.button(
+                        "☀" if theme == "dark" else "☾",
+                        key="pb_theme_toggle",
+                        help=t("switch_to_light" if theme == "dark" else "switch_to_dark"),
+                        on_click=_toggle_theme,
+                    )
         with user_col:
             user = get_authenticated_user() or {}
             avatar_col, name_col = st.columns([0.25, 0.75], vertical_alignment="center")

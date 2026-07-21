@@ -9,10 +9,10 @@ from ui_v2.state import (
 )
 
 
-def _nav(label: str, glyph: str, page: str):
+def _nav(label: str, page: str):
     active = get_current_page() == page
     if st.button(
-        f"{glyph}  {label}",
+        label,
         key=f"ui_v2_nav_{page}",
         width="stretch",
         type="primary" if active else "secondary",
@@ -22,10 +22,10 @@ def _nav(label: str, glyph: str, page: str):
         st.rerun()
 
 
-def _source_nav(label: str, glyph: str, source: str):
+def _source_nav(label: str, source: str):
     active = get_current_page() == "sources" and st.session_state.get("ui_v2_selected_source") == source
     if st.button(
-        f"{glyph}  {label}",
+        label,
         key=f"ui_v2_source_{source}",
         width="stretch",
         type="primary" if active else "secondary",
@@ -40,7 +40,7 @@ def render_menu():
     st.markdown(
         f"""
         <div class="pb-brand">
-            <img class="pb-brand-logo" src="{logo}" alt="Project Brain">
+            <div class="pb-brand-logo"><img src="{logo}" alt="Project Brain"></div>
             <div><div class="pb-brand-title">Project Brain</div>
             <div class="pb-caption">AI Business Analyst</div></div>
         </div>
@@ -49,28 +49,28 @@ def render_menu():
     )
 
     with st.container(key="pb_navigation"):
-        _nav(t("projects"), "◇", "projects")
-        _nav(t("workspace"), "⌂", "dashboard")
-        _nav(t("sources"), "≡", "sources")
-        _nav(t("participants"), "◎", "participants")
-        _nav(t("speech_quality"), "◌", "transcription_diagnostics")
+        _nav(t("projects"), "projects")
+        _nav(t("workspace"), "dashboard")
+        _nav(t("sources"), "sources")
+        _nav(t("participants"), "participants")
+        _nav(t("speech_quality"), "transcription_diagnostics")
         if st.button(
-            f"▣  {t('artifacts')}",
+            t("artifacts"),
             key="ui_v2_nav_artifacts",
             width="stretch",
             type="primary" if get_current_page() == "artifacts" else "secondary",
         ):
             open_artifacts()
             st.rerun()
-        _nav(t("exports"), "⇩", "exports")
+        _nav(t("exports"), "exports")
 
         st.caption(t("source_section"))
-        _source_nav(t("meetings"), "▷", "meetings")
-        _source_nav("Slack", "", "slack")
-        _source_nav("Confluence", "", "confluence")
-        _source_nav("Jira", "", "jira")
-        _source_nav(t("files"), "▧", "files")
+        _source_nav(t("meetings"), "meetings")
+        _source_nav("Slack", "slack")
+        _source_nav("Confluence", "confluence")
+        _source_nav("Jira", "jira")
+        _source_nav(t("files"), "files")
 
         st.caption(t("project_section"))
-        _nav(t("settings"), "⚙︎", "settings")
-        _nav(t("project_model"), "⬡", "project_model")
+        _nav(t("settings"), "settings")
+        _nav(t("project_model"), "project_model")

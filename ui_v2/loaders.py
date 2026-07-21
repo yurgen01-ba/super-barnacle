@@ -8,13 +8,13 @@ from ui_v2.assets import logo_data_uri
 from ui_v2.i18n import t
 
 
-def render_intro_loader() -> None:
+def render_intro_loader(duration: float = 2.8) -> None:
     placeholder = st.empty()
     placeholder.markdown(
         f"""
         <div class="pb-glass-loader">
             <div class="pb-loader-card">
-                <img src="{logo_data_uri()}" alt="Project Brain">
+                <div class="pb-loader-logo"><img src="{logo_data_uri()}" alt="Project Brain"></div>
                 <div class="pb-loader-orbit"></div>
                 <div class="pb-loader-messages">
                     <span>{t('loader_message_1')}</span>
@@ -26,7 +26,7 @@ def render_intro_loader() -> None:
         """,
         unsafe_allow_html=True,
     )
-    time.sleep(2.8)
+    time.sleep(duration)
     placeholder.empty()
 
 

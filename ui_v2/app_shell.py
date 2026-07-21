@@ -1,6 +1,4 @@
 import streamlit as st
-from PIL import Image
-
 from memory.db import init_db
 from memory.fact_schema import init_fact_schema
 from repositories.memory_repository import MemoryRepository
@@ -13,19 +11,22 @@ from ui_v2.layout.menu import render_menu
 from ui_v2.layout.topbar import render_topbar
 from ui_v2.pages.page_registry import render_current_page
 from ui_v2.state import get_current_project_id
-from ui_v2.assets import LOGO_PATH
 from ui_v2.loaders import render_intro_loader, render_transition_loader
 
 
 def render_app_shell_v2():
     st.set_page_config(
         page_title="Project Brain",
-        page_icon=Image.open(LOGO_PATH),
+        page_icon="🦭",
         layout="wide",
         initial_sidebar_state="collapsed",
     )
 
     inject_ui_v2_theme(st.session_state.get("pb_theme", "dark"))
+
+    if st.session_state.get("pb_boot_loader_version") != 2:
+        render_intro_loader(duration=1.8)
+        st.session_state.pb_boot_loader_version = 2
 
     if not render_auth_gate():
         return
@@ -43,7 +44,7 @@ def render_app_shell_v2():
     inject_ui_v2_theme(st.session_state.get("pb_theme", "dark"))
 
     if not st.session_state.get("pb_intro_seen"):
-        render_intro_loader()
+        render_intro_loader(duration=2.8)
         st.session_state.pb_intro_seen = True
 
     if st.session_state.pop("pb_page_transition", False):

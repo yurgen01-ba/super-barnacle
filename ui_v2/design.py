@@ -1,5 +1,5 @@
 import streamlit as st
-from ui_v2.assets import logo_data_uri, svg_data_uri
+from ui_v2.assets import logo_data_uri, nav_icon_data_uri, svg_data_uri
 
 
 def inject_ui_v2_theme(theme: str = "dark"):
@@ -10,6 +10,13 @@ def inject_ui_v2_theme(theme: str = "dark"):
     slack_icon = svg_data_uri("slack")
     jira_icon = svg_data_uri("jira")
     confluence_icon = svg_data_uri("confluence")
+    nav_icons = {
+        name: nav_icon_data_uri(name)
+        for name in (
+            "projects", "workspace", "sources", "participants", "speech",
+            "artifacts", "exports", "meetings", "files", "settings", "model",
+        )
+    }
     light_overrides = """
         .st-key-pb_navigation div[data-testid="stButton"] button,
         .st-key-pb_navigation div[data-testid="stButton"] button p,
@@ -764,27 +771,140 @@ def inject_ui_v2_theme(theme: str = "dark"):
             }}
 
             .pb-brand-logo {{
-                width: 36px;
-                height: 36px;
-                object-fit: cover;
-                border-radius: 10px;
+                width: 42px;
+                height: 42px;
+                border-radius: 12px;
                 border: 1px solid var(--pb-border);
+                box-shadow: 0 10px 30px rgba(0,0,0,.24);
+                background: var(--pb-bg);
+                overflow: hidden;
+                position: relative;
             }}
 
             .pb-auth-logo {{
                 width: 74px;
                 height: 74px;
                 border-radius: 22px;
-                background: url('{logo}') center/cover no-repeat;
+                background: var(--pb-bg);
                 box-shadow: 0 18px 50px rgba(0,0,0,.28);
+                overflow: hidden;
+                position: relative;
+            }}
+
+            .st-key-pb_preferences_toolbar,
+            .st-key-pb_topbar_preferences {{
+                width: fit-content !important;
+                margin-left: auto !important;
+                margin-right: 1rem !important;
+                padding: .18rem !important;
+                border: 1px solid var(--pb-border) !important;
+                border-radius: 12px !important;
+                background: var(--pb-panel) !important;
+                box-shadow: 0 8px 26px rgba(0,0,0,.12);
+            }}
+
+            .st-key-pb_preferences_toolbar [data-testid="stHorizontalBlock"],
+            .st-key-pb_topbar_preferences [data-testid="stHorizontalBlock"] {{
+                gap: 0 !important;
+                flex-wrap: nowrap !important;
+            }}
+
+            .st-key-pb_preferences_toolbar [data-testid="stHorizontalBlock"] > div,
+            .st-key-pb_topbar_preferences [data-testid="stHorizontalBlock"] > div {{
+                width: 2.25rem !important;
+                min-width: 2.25rem !important;
+                max-width: 2.25rem !important;
+                flex: 0 0 2.25rem !important;
+            }}
+
+            .st-key-pb_preferences_toolbar button,
+            .st-key-pb_topbar_preferences button {{
+                width: 2.25rem !important;
+                min-width: 2.25rem !important;
+                height: 2.25rem !important;
+                min-height: 2.25rem !important;
+                padding: 0 !important;
+                border: 0 !important;
+                border-radius: 9px !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }}
+
+            .st-key-pb_preferences_toolbar button:hover,
+            .st-key-pb_topbar_preferences button:hover {{
+                background: rgba(127,127,127,.12) !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }}
+
+            .pb-brand-logo img,
+            .pb-auth-logo img,
+            .pb-loader-logo img {{
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: 150%;
+                height: 150%;
+                max-width: none !important;
+                object-fit: cover;
+                transform: translate(-50%, -50%);
+                filter: {'invert(1)' if light else 'none'};
+                mix-blend-mode: {'multiply' if light else 'screen'};
             }}
 
             div[data-testid="stTextInput"] input[type="password"] {{
                 padding-right: 3.4rem !important;
             }}
 
+            div[data-testid="stTextInput"] [data-baseweb="input"] {{
+                overflow: hidden !important;
+                border: 1px solid var(--pb-border) !important;
+                border-radius: 10px !important;
+                background: {'#FFFFFF' if light else 'rgba(24,24,27,.96)'} !important;
+                box-shadow: none !important;
+            }}
+
+            div[data-testid="stTextInput"] [data-baseweb="input"] input {{
+                border: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }}
+
+            html body div.stApp div[data-testid="stTextInput"] button {{
+                width: 3rem !important;
+                min-width: 3rem !important;
+                height: 2.7rem !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border: 0 !important;
+                border-radius: 0 9px 9px 0 !important;
+                background: {'#FFFFFF' if light else 'rgba(24,24,27,.96)'} !important;
+                color: var(--pb-muted) !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }}
+
+            html body div.stApp div[data-testid="stTextInput"] button:hover {{
+                background: rgba(127,127,127,.1) !important;
+                color: var(--pb-text) !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }}
+
             .st-key-auth_google button::before,
             .st-key-auth_facebook button::before,
+            .st-key-ui_v2_nav_projects button::before,
+            .st-key-ui_v2_nav_dashboard button::before,
+            .st-key-ui_v2_nav_sources button::before,
+            .st-key-ui_v2_nav_participants button::before,
+            .st-key-ui_v2_nav_transcription_diagnostics button::before,
+            .st-key-ui_v2_nav_artifacts button::before,
+            .st-key-ui_v2_nav_exports button::before,
+            .st-key-ui_v2_source_meetings button::before,
+            .st-key-ui_v2_source_files button::before,
+            .st-key-ui_v2_nav_settings button::before,
+            .st-key-ui_v2_nav_project_model button::before,
             .st-key-ui_v2_source_slack button::before,
             .st-key-ui_v2_source_jira button::before,
             .st-key-ui_v2_source_confluence button::before {{
@@ -801,6 +921,17 @@ def inject_ui_v2_theme(theme: str = "dark"):
             }}
             .st-key-auth_google button::before {{ mask-image: url('{google_icon}'); }}
             .st-key-auth_facebook button::before {{ mask-image: url('{facebook_icon}'); }}
+            .st-key-ui_v2_nav_projects button::before {{ mask-image: url('{nav_icons['projects']}'); }}
+            .st-key-ui_v2_nav_dashboard button::before {{ mask-image: url('{nav_icons['workspace']}'); }}
+            .st-key-ui_v2_nav_sources button::before {{ mask-image: url('{nav_icons['sources']}'); }}
+            .st-key-ui_v2_nav_participants button::before {{ mask-image: url('{nav_icons['participants']}'); }}
+            .st-key-ui_v2_nav_transcription_diagnostics button::before {{ mask-image: url('{nav_icons['speech']}'); }}
+            .st-key-ui_v2_nav_artifacts button::before {{ mask-image: url('{nav_icons['artifacts']}'); }}
+            .st-key-ui_v2_nav_exports button::before {{ mask-image: url('{nav_icons['exports']}'); }}
+            .st-key-ui_v2_source_meetings button::before {{ mask-image: url('{nav_icons['meetings']}'); }}
+            .st-key-ui_v2_source_files button::before {{ mask-image: url('{nav_icons['files']}'); }}
+            .st-key-ui_v2_nav_settings button::before {{ mask-image: url('{nav_icons['settings']}'); }}
+            .st-key-ui_v2_nav_project_model button::before {{ mask-image: url('{nav_icons['model']}'); }}
             .st-key-ui_v2_source_slack button::before {{ mask-image: url('{slack_icon}'); }}
             .st-key-ui_v2_source_jira button::before {{ mask-image: url('{jira_icon}'); }}
             .st-key-ui_v2_source_confluence button::before {{ mask-image: url('{confluence_icon}'); }}
@@ -846,7 +977,14 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 box-shadow: 0 30px 100px rgba(0,0,0,.45);
                 overflow: hidden;
             }}
-            .pb-loader-card img {{ width: 92px; height: 92px; border-radius: 28px; object-fit: cover; }}
+            .pb-loader-logo {{
+                position: relative;
+                width: 92px;
+                height: 92px;
+                border-radius: 28px;
+                overflow: hidden;
+                background: var(--pb-bg);
+            }}
             .pb-loader-orbit {{
                 position: absolute;
                 width: 126px;

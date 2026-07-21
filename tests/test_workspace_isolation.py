@@ -64,6 +64,34 @@ class WorkspaceIsolationTests(unittest.TestCase):
         self.assertEqual(project["id"], bound["id"])
         self.assertIsNotNone(self.repository.get_project(project["id"], "future-user"))
 
+    def test_owner_email_migration_merges_duplicate_pending_membership(self):
+        owner = self.repository.ensure_user_workspace("owner-id")
+        conn = self.repository._connect()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO project_members(project_id, user_id, email, name, role, status)
+                VALUES (?, NULL, ?, '', 'member', 'active')
+                """,
+                (owner["id"], "owner@example.com"),
+            )
+        conn.close()
+
+        first = self.repository.ensure_user_workspace(
+            "owner-id", "owner@example.com", "Owner"
+        )
+        self.repository._ensure_schema()
+        second = self.repository.ensure_user_workspace(
+            "owner-id", "owner@example.com", "Owner"
+        )
+
+        self.assertEqual(owner["id"], first["id"])
+        self.assertEqual(owner["id"], second["id"])
+        members = self.repository.list_members(owner["id"], "owner-id")
+        matching = [item for item in members if item["email"] == "owner@example.com"]
+        self.assertEqual(1, len(matching))
+        self.assertEqual("owner", matching[0]["role"])
+
 
 if __name__ == "__main__":
     unittest.main()
