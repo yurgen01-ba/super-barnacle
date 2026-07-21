@@ -48,7 +48,9 @@ class EmailNotificationService:
             smtp.send_message(message)
         return True
 
-    def send_verification_email(self, *, recipient: str, name: str, verification_url: str) -> bool:
+    def send_verification_email(
+        self, *, recipient: str, name: str, verification_url: str
+    ) -> bool:
         subject = "Project Brain: подтвердите адрес электронной почты"
         body = (
             f"Здравствуйте, {name or 'пользователь'}!\n\n"
@@ -63,7 +65,7 @@ class EmailNotificationService:
     ) -> bool:
         subject = f"Project Brain: приглашение в проект «{project_name}»"
         body = (
-            f"Здравствуйте!\n\n"
+            "Здравствуйте!\n\n"
             f"{inviter_name or 'Пользователь Project Brain'} приглашает вас в проект "
             f"«{project_name}».\n\n"
             f"Откройте Project Brain и войдите с адресом {recipient}:\n{invitation_url}\n\n"

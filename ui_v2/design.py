@@ -1059,6 +1059,61 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 background: var(--pb-panel-2) !important;
             }}
 
+            [class*="st-key-project_settings_"] [data-testid="stButton"] {{
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }}
+
+            [class*="st-key-project_settings_"] [data-testid="stButton"] button,
+            [class*="st-key-project_settings_"] [data-testid="stButton"] button:hover,
+            [class*="st-key-project_settings_"] [data-testid="stButton"] button:focus,
+            [class*="st-key-project_settings_"] [data-testid="stButton"] button:active {{
+                width: 2.5rem !important;
+                min-width: 2.5rem !important;
+                height: 2.5rem !important;
+                min-height: 2.5rem !important;
+                padding: 0 !important;
+                margin: 0 auto !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 0 !important;
+                border: 0 !important;
+                outline: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }}
+
+            [class*="st-key-project_settings_"] [data-testid="stButton"] button p {{
+                display: none !important;
+            }}
+
+            [class*="st-key-project_settings_"] [data-testid="stButton"] button [data-testid="stIconMaterial"] {{
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                margin: 0 !important;
+                line-height: 1 !important;
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+            }}
+
+            [class*="st-key-source_auth_panel_"] {{
+                min-height: 18rem !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }}
+
+            [class*="st-key-source_auth_panel_"] [data-testid="stButton"] {{
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 100% !important;
+            }}
+
             div[data-testid="stExpander"],
             div[data-testid="stExpander"] details,
             div[data-testid="stExpander"] summary {{

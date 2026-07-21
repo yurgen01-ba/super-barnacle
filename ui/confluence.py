@@ -11,10 +11,7 @@ from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
 from ui_v2.auth import get_authenticated_email
 from ui_v2.i18n import t
-from ui_v2.browser_connectors import (
-    render_atlassian_oauth_source_connector,
-    render_local_browser_connector,
-)
+from ui_v2.source_connections import render_source_authorization
 
 
 def _render_active_job(project_id: str):
@@ -38,90 +35,89 @@ def render_confluence_tab(memory_repository: MemoryRepository):
     st.header(t("confluence_articles"))
     st.caption(t("confluence_caption"))
 
-    render_atlassian_oauth_source_connector("confluence")
-    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
-    render_local_browser_connector("atlassian", atlassian_products=("confluence",))
-    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
-
-    confluence_text = st.text_area(
-        t("paste_confluence"),
-        height=350,
-        placeholder=t("confluence_text_placeholder"),
-        key="confluence_ingest_article_text",
-    )
-
     active_job = _render_active_job(project_id)
     if active_job:
         return
 
-    if st.button(t("process_confluence"), key="process_confluence_article_button", type="primary"):
-        if not confluence_text.strip():
-            st.warning(t("paste_confluence_warning"))
-            return
+    auth_tab, files_tab, text_tab = st.tabs([
+        t("source_tab_authorization"),
+        t("source_tab_files"),
+        t("source_tab_text"),
+    ])
 
-        title = next(
-            (line.strip()[:120] for line in confluence_text.splitlines() if line.strip()),
-            "Confluence text",
+    with auth_tab:
+        with st.container(key="source_auth_panel_confluence"):
+            render_source_authorization("confluence")
+
+    with files_tab:
+        confluence_pdfs = st.file_uploader(
+            t("confluence_upload_label", count=MAX_PDF_FILES),
+            type=["pdf", "zip", "7z"],
+            accept_multiple_files=True,
+            help=t("confluence_upload_help", count=MAX_PDF_FILES),
+            key="confluence_pdf_uploads",
         )
-        service = KnowledgeExtractionJobService()
-        job = service.start(
-            process_confluence_article_job,
-            text=confluence_text,
-            title=title,
-            project_id=project_id,
-            metadata={
-                "source": "confluence",
-                "title": title,
-                "project_id": project_id,
-                "notification_email": get_authenticated_email(),
-            },
+        st.caption(t("confluence_upload_caption", count=MAX_PDF_FILES))
+        if st.button(
+            t("process_confluence_files"),
+            key="process_confluence_files_button",
+            type="primary",
+        ):
+            if not confluence_pdfs:
+                st.warning(t("choose_confluence_warning"))
+            else:
+                try:
+                    file_specs = stage_pdf_uploads(
+                        confluence_pdfs,
+                        prefix="project_brain_confluence_stage_",
+                    )
+                except ValueError as exc:
+                    st.error(str(exc))
+                else:
+                    service = KnowledgeExtractionJobService()
+                    job = service.start(
+                        process_confluence_pdfs_job,
+                        file_specs=file_specs,
+                        project_id=project_id,
+                        metadata={
+                            "source": "confluence_pdf",
+                            "project_id": project_id,
+                            "files": [spec["name"] for spec in file_specs],
+                            "notification_email": get_authenticated_email(),
+                        },
+                    )
+                    st.session_state["latest_knowledge_extraction_job_id"] = job.id
+                    st.success(t("processing_started_email"))
+                    st.rerun()
+
+    with text_tab:
+        confluence_text = st.text_area(
+            t("paste_confluence"),
+            height=350,
+            placeholder=t("confluence_text_placeholder"),
+            key="confluence_ingest_article_text",
         )
-
-        st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success(t("processing_started_email"))
-        st.rerun()
-
-    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
-
-    confluence_pdfs = st.file_uploader(
-        t("confluence_upload_label", count=MAX_PDF_FILES),
-        type=["pdf", "zip", "7z"],
-        accept_multiple_files=True,
-        help=t("confluence_upload_help", count=MAX_PDF_FILES),
-        key="confluence_pdf_uploads",
-    )
-    st.caption(t("confluence_upload_caption", count=MAX_PDF_FILES))
-
-    if st.button(
-        t("process_confluence_files"),
-        key="process_confluence_files_button",
-        type="primary",
-    ):
-        if not confluence_pdfs:
-            st.warning(t("choose_confluence_warning"))
-            return
-
-        try:
-            file_specs = stage_pdf_uploads(
-                confluence_pdfs,
-                prefix="project_brain_confluence_stage_",
-            )
-        except ValueError as exc:
-            st.error(str(exc))
-            return
-
-        service = KnowledgeExtractionJobService()
-        job = service.start(
-            process_confluence_pdfs_job,
-            file_specs=file_specs,
-            project_id=project_id,
-            metadata={
-                "source": "confluence_pdf",
-                "project_id": project_id,
-                "files": [spec["name"] for spec in file_specs],
-                "notification_email": get_authenticated_email(),
-            },
-        )
-        st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success(t("processing_started_email"))
-        st.rerun()
+        if st.button(t("process_confluence"), key="process_confluence_article_button", type="primary"):
+            if not confluence_text.strip():
+                st.warning(t("paste_confluence_warning"))
+            else:
+                title = next(
+                    (line.strip()[:120] for line in confluence_text.splitlines() if line.strip()),
+                    "Confluence text",
+                )
+                service = KnowledgeExtractionJobService()
+                job = service.start(
+                    process_confluence_article_job,
+                    text=confluence_text,
+                    title=title,
+                    project_id=project_id,
+                    metadata={
+                        "source": "confluence",
+                        "title": title,
+                        "project_id": project_id,
+                        "notification_email": get_authenticated_email(),
+                    },
+                )
+                st.session_state["latest_knowledge_extraction_job_id"] = job.id
+                st.success(t("processing_started_email"))
+                st.rerun()

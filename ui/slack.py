@@ -8,7 +8,7 @@ from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
 from ui_v2.auth import get_authenticated_email
 from ui_v2.i18n import t
-from ui_v2.browser_connectors import render_local_browser_connector
+from ui_v2.source_connections import render_source_authorization
 
 
 def _render_active_job(project_id: str):
@@ -31,15 +31,6 @@ def render_slack_tab(memory_repository: MemoryRepository):
     project_id = get_current_project_id()
     st.header(t("slack_analysis"))
 
-    render_local_browser_connector("slack")
-    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
-
-    slack_text = st.text_area(
-        t("paste_slack"),
-        height=300,
-        placeholder="[10:01] Alice: We decided to use USDC as settlement currency.",
-    )
-
     chunk_size = int(
         workspace_repository.get_settings(project_id).get("slack_messages_per_chunk", 12)
     )
@@ -48,24 +39,37 @@ def render_slack_tab(memory_repository: MemoryRepository):
     if active_job:
         return
 
-    if st.button(t("process_slack"), type="primary"):
-        if not slack_text.strip():
-            st.warning(t("paste_slack_warning"))
-            return
+    auth_tab, text_tab = st.tabs([
+        t("source_tab_authorization"),
+        t("source_tab_text"),
+    ])
+    with auth_tab:
+        with st.container(key="source_auth_panel_slack"):
+            render_source_authorization("slack")
 
-        service = KnowledgeExtractionJobService()
-        job = service.start(
-            process_slack_text_job,
-            text=slack_text,
-            chunk_size=chunk_size,
-            project_id=project_id,
-            metadata={
-                "source": "slack",
-                "project_id": project_id,
-                "notification_email": get_authenticated_email(),
-            },
+    with text_tab:
+        slack_text = st.text_area(
+            t("paste_slack"),
+            height=300,
+            placeholder="[10:01] Alice: We decided to use USDC as settlement currency.",
+            key="slack_ingest_text",
         )
-
-        st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success(t("processing_started_email"))
-        st.rerun()
+        if st.button(t("process_slack"), type="primary", key="process_slack_text_button"):
+            if not slack_text.strip():
+                st.warning(t("paste_slack_warning"))
+            else:
+                service = KnowledgeExtractionJobService()
+                job = service.start(
+                    process_slack_text_job,
+                    text=slack_text,
+                    chunk_size=chunk_size,
+                    project_id=project_id,
+                    metadata={
+                        "source": "slack",
+                        "project_id": project_id,
+                        "notification_email": get_authenticated_email(),
+                    },
+                )
+                st.session_state["latest_knowledge_extraction_job_id"] = job.id
+                st.success(t("processing_started_email"))
+                st.rerun()

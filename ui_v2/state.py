@@ -60,6 +60,27 @@ def open_source(source: str):
     set_current_page("sources")
 
 
+def open_connection_settings(provider: str):
+    provider = str(provider or "").lower()
+    if provider not in {"jira", "confluence", "slack"}:
+        raise ValueError("Unsupported connection settings section")
+    st.session_state.ui_v2_connection_settings = provider
+    st.session_state.connection_settings_selector = provider
+    set_current_page("settings")
+
+
+def get_connection_settings() -> str:
+    provider = str(st.session_state.get("ui_v2_connection_settings", "jira")).lower()
+    return provider if provider in {"jira", "confluence", "slack"} else "jira"
+
+
+def set_connection_settings(provider: str):
+    provider = str(provider or "").lower()
+    if provider not in {"jira", "confluence", "slack"}:
+        raise ValueError("Unsupported connection settings section")
+    st.session_state.ui_v2_connection_settings = provider
+
+
 def get_dashboard_loader() -> str | None:
     if "ui_v2_dashboard_loader" not in st.session_state:
         st.session_state.ui_v2_dashboard_loader = DEFAULT_DASHBOARD_LOADER

@@ -6,6 +6,7 @@ from repositories.memory_repository import MemoryRepository
 from repositories.workspace_repository import workspace_repository
 from ui_v2.assets import favicon_image
 from ui_v2.atlassian import render_atlassian_oauth_callback
+from ui_v2.slack_oauth import render_slack_oauth_callback
 from ui_v2.auth import get_authenticated_user, render_auth_gate
 from ui_v2.design import inject_ui_v2_theme
 from ui_v2.i18n import set_language, t
@@ -66,6 +67,8 @@ def render_app_shell_v2():
     inject_ui_v2_theme(st.session_state.get("pb_theme", "dark"))
 
     if render_atlassian_oauth_callback():
+        return
+    if render_slack_oauth_callback():
         return
 
     if not render_auth_gate():

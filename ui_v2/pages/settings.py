@@ -6,8 +6,7 @@ from providers.text.health import check_ollama_text_model
 from providers.vision.health import check_ollama_health
 from repositories.workspace_repository import workspace_repository
 from ui_v2.auth import get_authenticated_user
-from ui_v2.atlassian import render_atlassian_settings
-from ui_v2.browser_connectors import render_local_browser_connector
+from ui_v2.source_connections import render_connection_settings_hub
 from ui_v2.components.html import title
 from ui_v2.i18n import t
 from ui_v2.state import get_current_project_id, set_current_page
@@ -71,12 +70,11 @@ def render_settings():
                 st.success(t("name_saved"))
                 st.rerun()
 
-    render_atlassian_settings()
+    render_connection_settings_hub()
 
     st.divider()
-    st.subheader("Slack")
+    st.subheader(t("slack_processing"))
     st.caption(t("slack_settings_caption"))
-    render_local_browser_connector("slack")
     with st.form("slack_processing_settings"):
         slack_messages_per_chunk = st.slider(
             t("messages_per_chunk"),
