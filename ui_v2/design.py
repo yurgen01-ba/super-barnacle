@@ -1652,7 +1652,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
             .pb-inline-task-track {{
                 position: relative;
                 height: 8px;
-                margin: 1.05rem 1.25rem .9rem;
+                margin: 2.7rem 1.25rem .9rem;
                 border-radius: 999px;
                 background: color-mix(in srgb, var(--pb-border) 72%, transparent);
                 overflow: visible;
@@ -1670,7 +1670,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 position: absolute;
                 z-index: 2;
                 left: 0;
-                top: 50%;
+                bottom: 12px;
                 width: 52px;
                 height: 38px;
                 background: #ff4b4b;
@@ -1680,7 +1680,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 mask-position: center;
                 -webkit-mask-size: contain;
                 mask-size: contain;
-                transform: translateY(-50%);
+                transform: translateY(0);
                 filter: drop-shadow(0 4px 9px rgba(255,75,75,.28));
                 animation: pbSealCrawl 2.8s ease-in-out infinite;
             }}
@@ -1845,9 +1845,9 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 to {{ background-position: -105% 0; }}
             }}
             @keyframes pbSealCrawl {{
-                0% {{ left: 0; transform: translateY(-50%) rotate(-2deg); }}
-                45% {{ transform: translateY(-58%) rotate(2deg); }}
-                100% {{ left: calc(100% - 52px); transform: translateY(-50%) rotate(-2deg); }}
+                0% {{ left: 0; transform: translateY(0) rotate(-2deg); }}
+                45% {{ transform: translateY(-3px) rotate(2deg); }}
+                100% {{ left: calc(100% - 52px); transform: translateY(0) rotate(-2deg); }}
             }}
             @keyframes pbGlassSweep {{
                 0% {{ transform: translateX(-42%) rotate(4deg); opacity:.35; }}
