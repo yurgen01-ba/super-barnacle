@@ -28,6 +28,7 @@ def _render_active_job(project_id: str):
 
 def render_slack_tab(memory_repository: MemoryRepository):
     project_id = get_current_project_id()
+    st.header(t("slack_analysis"))
 
     slack_text = st.text_area(
         t("paste_slack"),
