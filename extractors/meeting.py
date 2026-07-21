@@ -16,7 +16,7 @@ from transcription.domain_glossary import apply_domain_glossary_repair
 from transcription.quality_score import score_transcript_segment
 from transcription.segment_retry import should_retry_segment, choose_better_segment
 from transcription.context_stitching import build_initial_prompt, update_previous_context
-from transcription.meeting_audio_integration import process_audio_with_selected_backend
+from transcription.meeting_audio_integration import process_audio_segments_with_selected_backend
 from extractors.screen import cleanup_frames, deduplicate_similar_frames, extract_video_frames
 from providers.vision.factory import create_vision_provider
 from utils.text import chunk_text
@@ -393,11 +393,19 @@ def process_meeting_video(
 
         _emit(audio_progress_callback, {"event": "audio_stage_started"})
 
+        if segment_seconds is None:
+            segment_seconds = choose_audio_segment_seconds(duration_seconds)
+
+        _emit(audio_progress_callback, {"event": "audio_split_started", "segment_seconds": segment_seconds})
+        audio_segments = split_video_to_audio_segments(video_path, segment_seconds=segment_seconds)
+        _emit(audio_progress_callback, {"event": "audio_split_completed", "segments_count": len(audio_segments), "segment_seconds": segment_seconds})
+
         audio_intelligence_result = None
         if use_audio_intelligence:
             try:
-                audio_intelligence_result = process_audio_with_selected_backend(
-                    video_path,
+                audio_intelligence_result = process_audio_segments_with_selected_backend(
+                    audio_segments,
+                    segment_seconds,
                     language,
                     min_speakers,
                     max_speakers,
@@ -411,13 +419,6 @@ def process_meeting_video(
                 )
             except Exception as exc:
                 errors.append(f"Audio Intelligence failed; fallback to legacy Whisper: {repr(exc)}")
-
-        if segment_seconds is None:
-            segment_seconds = choose_audio_segment_seconds(duration_seconds)
-
-        _emit(audio_progress_callback, {"event": "audio_split_started", "segment_seconds": segment_seconds})
-        audio_segments = split_video_to_audio_segments(video_path, segment_seconds=segment_seconds)
-        _emit(audio_progress_callback, {"event": "audio_split_completed", "segments_count": len(audio_segments), "segment_seconds": segment_seconds})
 
         if audio_intelligence_result:
             raw_transcript = audio_intelligence_result.get("text", "")
