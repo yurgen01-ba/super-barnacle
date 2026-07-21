@@ -1584,8 +1584,8 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 border-color: color-mix(in srgb, var(--pb-text-2) 32%, var(--pb-border)) !important;
             }}
 
-            html body [class*="st-key-pb_source_card_"][class*="_active"] [data-testid="stButton"] button,
-            html body [class*="st-key-pb_source_card_"][class*="_active"] [data-testid="stButton"] button:hover {{
+            html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button[kind="primary"],
+            html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button[kind="primary"]:hover {{
                 background: color-mix(in srgb, #3B82F6 14%, var(--pb-panel)) !important;
                 border-color: rgba(59, 130, 246, .72) !important;
                 box-shadow: 0 0 0 1px rgba(59, 130, 246, .14),
@@ -1604,10 +1604,10 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 mask-size: contain;
             }}
 
-            [class*="st-key-pb_source_card_meetings_"] button::before {{ mask-image: url('{nav_icons['meetings']}'); }}
-            [class*="st-key-pb_source_card_slack_"] button::before {{ mask-image: url('{slack_icon}'); }}
-            [class*="st-key-pb_source_card_confluence_"] button::before {{ mask-image: url('{confluence_icon}'); }}
-            [class*="st-key-pb_source_card_jira_"] button::before {{ mask-image: url('{jira_icon}'); }}
+            [class*="st-key-pb_source_card_meetings"] button::before {{ mask-image: url('{nav_icons['meetings']}'); }}
+            [class*="st-key-pb_source_card_slack"] button::before {{ mask-image: url('{slack_icon}'); }}
+            [class*="st-key-pb_source_card_confluence"] button::before {{ mask-image: url('{confluence_icon}'); }}
+            [class*="st-key-pb_source_card_jira"] button::before {{ mask-image: url('{jira_icon}'); }}
 
             html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button p {{
                 margin: 0 !important;

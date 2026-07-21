@@ -56,17 +56,22 @@ def _latest_changes(project_id: str):
                 st.text(t("no_event_details"))
 
 
+def _toggle_source_card(loader: str):
+    current_loader = get_dashboard_loader()
+    set_dashboard_loader(None if current_loader == loader else loader)
+
+
 def _source_card(title: str, caption: str, loader: str):
     is_open = get_dashboard_loader() == loader
-    state = "active" if is_open else "idle"
-    if st.button(
+    st.button(
         title,
-        key=f"pb_source_card_{loader}_{state}",
+        key=f"pb_source_card_{loader}",
         help=caption,
+        type="primary" if is_open else "secondary",
         width="stretch",
-    ):
-        set_dashboard_loader(None if is_open else loader)
-        st.rerun()
+        on_click=_toggle_source_card,
+        args=(loader,),
+    )
 
 
 def _render_dashboard_loader(memory_repository):
@@ -117,7 +122,6 @@ def render_dashboard(memory_repository):
     _latest_changes(project_id)
 
     st.markdown(f"### {t('data_upload')}")
-    st.caption(t("data_upload_caption"))
 
     c1, c2, c3, c4 = st.columns(4)
 
