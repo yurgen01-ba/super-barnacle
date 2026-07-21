@@ -74,8 +74,12 @@ class RunningJob:
             self.stage = stage
         if message is not None:
             self.message = message
-            self.logs.append(message)
+            self.add_log(message)
         self.touch()
+
+    def add_log(self, message: str):
+        timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+        self.logs.append(f"[{timestamp}] {message}")
 
     def touch(self):
         self.updated_at = datetime.utcnow()

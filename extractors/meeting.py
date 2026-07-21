@@ -149,7 +149,7 @@ def transcribe_audio_segments(
 
         raw_text = str(result.get("text") or "").strip()
         repaired_text = apply_domain_glossary_repair(raw_text)
-        detected_language = str(result.get("language") or effective_language)
+        detected_language = str(result.get("language") or effective_language or "unknown")
         quality = score_transcript_segment(repaired_text, language=effective_language)
         quality_dict = _quality_to_dict(quality)
 

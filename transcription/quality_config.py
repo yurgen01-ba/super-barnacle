@@ -6,7 +6,7 @@ import os
 
 @dataclass(frozen=True, slots=True)
 class WhisperQualityConfig:
-    language: str = "ru"
+    language: str | None = None
     beam_size: int = 3
     best_of: int = 3
     temperature: float = 0.0
@@ -17,8 +17,8 @@ class WhisperQualityConfig:
     fp16: bool = True
 
 
-def get_default_language(language: str | None = None) -> str:
-    return language or os.getenv("PROJECT_BRAIN_TRANSCRIPTION_LANGUAGE") or "ru"
+def get_default_language(language: str | None = None) -> str | None:
+    return language or os.getenv("PROJECT_BRAIN_TRANSCRIPTION_LANGUAGE") or None
 
 
 def get_whisper_quality_config(language: str | None = None) -> WhisperQualityConfig:
@@ -29,13 +29,15 @@ def build_whisper_transcribe_kwargs(language: str | None = None, initial_prompt:
     config = get_whisper_quality_config(language)
     kwargs = {
         "fp16": config.fp16,
-        "language": config.language,
         "temperature": config.temperature,
         "condition_on_previous_text": config.condition_on_previous_text,
         "compression_ratio_threshold": config.compression_ratio_threshold,
         "logprob_threshold": config.logprob_threshold,
         "no_speech_threshold": config.no_speech_threshold,
     }
+
+    if config.language:
+        kwargs["language"] = config.language
 
     if retry:
         kwargs.update({"beam_size": 5, "best_of": 5, "temperature": 0.0})

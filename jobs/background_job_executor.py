@@ -54,11 +54,11 @@ class BackgroundJobExecutor:
 
         try:
             if email_notification_service.notify_job_finished(job):
-                job.logs.append("Email notification sent.")
+                job.add_log("Email notification sent.")
             elif (job.metadata or {}).get("notification_email"):
-                job.logs.append("Email notification skipped: SMTP is not configured.")
+                job.add_log("Email notification skipped: SMTP is not configured.")
         except Exception as exc:
-            job.logs.append(f"Email notification failed: {exc}")
+            job.add_log(f"Email notification failed: {exc}")
 
         running_job_store.update(job)
 

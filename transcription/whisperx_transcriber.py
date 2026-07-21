@@ -46,14 +46,16 @@ class WhisperXTranscriber:
         self.batch_size = int(WHISPERX_BATCH_SIZE)
         self.enable_alignment = _bool(WHISPERX_ENABLE_ALIGNMENT)
         self.enable_diarization = _bool(WHISPERX_ENABLE_DIARIZATION)
-        self.language = str(WHISPERX_LANGUAGE or "ru")
+        self.language = str(WHISPERX_LANGUAGE) if WHISPERX_LANGUAGE else None
         self.model = whisperx.load_model(
             WHISPERX_MODEL_NAME,
             self.device,
             compute_type=self.compute_type,
             language=self.language,
             asr_options={
-                "initial_prompt": str(WHISPERX_INITIAL_PROMPT or "") or None,
+                "initial_prompt": (
+                    str(WHISPERX_INITIAL_PROMPT or "") or None
+                ) if self.language else None,
                 "hotwords": str(WHISPERX_HOTWORDS or "") or None,
                 "condition_on_previous_text": True,
                 "hallucination_silence_threshold": 1.5,
