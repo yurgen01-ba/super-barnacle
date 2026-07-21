@@ -12,10 +12,14 @@ from repositories.atlassian_connection_repository import (
 )
 
 
-ATLASSIAN_SCOPES = (
-    "offline_access read:me read:jira-work read:jira-user "
+ATLASSIAN_BASE_SCOPES = "offline_access read:me"
+ATLASSIAN_JIRA_SCOPES = "read:jira-work read:jira-user"
+ATLASSIAN_CONFLUENCE_SCOPES = (
     "read:confluence-content.all read:confluence-space.summary "
     "search:confluence read:attachment:confluence"
+)
+ATLASSIAN_SCOPES = " ".join(
+    (ATLASSIAN_BASE_SCOPES, ATLASSIAN_JIRA_SCOPES, ATLASSIAN_CONFLUENCE_SCOPES)
 )
 
 
@@ -42,14 +46,25 @@ class AtlassianOAuthService:
     def configured(self) -> bool:
         return bool(self.client_id and self.client_secret and self.redirect_uri)
 
-    def authorization_url(self, user_id: str, project_id: str) -> str:
+    def authorization_url(
+        self, user_id: str, project_id: str, *, product: str | None = None
+    ) -> str:
         if not self.configured:
             raise AtlassianOAuthError("Atlassian OAuth is not configured")
+        product = str(product or "").strip().lower()
+        if product == "jira":
+            scopes = " ".join((ATLASSIAN_BASE_SCOPES, ATLASSIAN_JIRA_SCOPES))
+        elif product == "confluence":
+            scopes = " ".join((ATLASSIAN_BASE_SCOPES, ATLASSIAN_CONFLUENCE_SCOPES))
+        elif not product:
+            scopes = ATLASSIAN_SCOPES
+        else:
+            raise AtlassianOAuthError(f"Unsupported Atlassian product: {product}")
         state = self.repository.create_state(user_id, project_id)
         return "https://auth.atlassian.com/authorize?" + urlencode({
             "audience": "api.atlassian.com",
             "client_id": self.client_id,
-            "scope": ATLASSIAN_SCOPES,
+            "scope": scopes,
             "redirect_uri": self.redirect_uri,
             "state": state,
             "response_type": "code",

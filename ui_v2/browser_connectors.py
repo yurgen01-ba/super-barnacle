@@ -37,7 +37,9 @@ def render_atlassian_oauth_source_connector(product: str) -> None:
         st.warning(t("atlassian_oauth_unavailable"))
         return
 
-    connect_url = atlassian_oauth_service.authorization_url(user_id, project_id)
+    connect_url = atlassian_oauth_service.authorization_url(
+        user_id, project_id, product=product
+    )
     st.link_button(
         t("connect_via_oauth"), connect_url, type="primary",
         icon=":material/link:", help=t("connect_atlassian_help"),

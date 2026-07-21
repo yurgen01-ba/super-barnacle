@@ -46,6 +46,25 @@ class AtlassianOAuthTests(unittest.TestCase):
         self.assertEqual(self.repo.consume_state(state)["project_id"], "project-1")
         self.assertIsNone(self.repo.consume_state(state))
 
+    def test_product_authorization_urls_request_only_relevant_scopes(self):
+        service = AtlassianOAuthService(repository=self.repo)
+
+        jira_query = parse_qs(urlparse(
+            service.authorization_url("user-1", "project-1", product="jira")
+        ).query)
+        jira_scopes = jira_query["scope"][0]
+        self.assertIn("read:jira-work", jira_scopes)
+        self.assertIn("read:me", jira_scopes)
+        self.assertNotIn("confluence", jira_scopes)
+
+        confluence_query = parse_qs(urlparse(
+            service.authorization_url("user-1", "project-1", product="confluence")
+        ).query)
+        confluence_scopes = confluence_query["scope"][0]
+        self.assertIn("read:confluence-content.all", confluence_scopes)
+        self.assertIn("read:me", confluence_scopes)
+        self.assertNotIn("jira", confluence_scopes)
+
     def test_callback_saves_encrypted_tokens(self):
         def handler(request: httpx.Request):
             if request.url.path == "/oauth/token":
