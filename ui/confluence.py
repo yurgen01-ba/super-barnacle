@@ -1,8 +1,12 @@
 import streamlit as st
 
-from jobs.extraction_tasks import process_confluence_article_job
+from jobs.extraction_tasks import (
+    process_confluence_article_job,
+    process_confluence_pdfs_job,
+)
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
+from services.jira_archive_service import MAX_PDF_FILES, stage_pdf_uploads
 from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
 from ui_v2.auth import get_authenticated_email
@@ -30,11 +34,10 @@ def render_confluence_tab(memory_repository: MemoryRepository):
     st.header(t("confluence_articles"))
     st.caption(t("confluence_caption"))
 
-    article_title = st.text_input(t("article_title"), placeholder="Wallet Service Overview", key="confluence_ingest_article_title")
     confluence_text = st.text_area(
         t("paste_confluence"),
         height=350,
-        placeholder="Paste article content, tables copied as text, requirements, decision logs, or architecture pages...",
+        placeholder=t("confluence_text_placeholder"),
         key="confluence_ingest_article_text",
     )
 
@@ -47,7 +50,10 @@ def render_confluence_tab(memory_repository: MemoryRepository):
             st.warning(t("paste_confluence_warning"))
             return
 
-        title = article_title.strip() or "Confluence article"
+        title = next(
+            (line.strip()[:120] for line in confluence_text.splitlines() if line.strip()),
+            "Confluence text",
+        )
         service = KnowledgeExtractionJobService()
         job = service.start(
             process_confluence_article_job,
@@ -62,6 +68,51 @@ def render_confluence_tab(memory_repository: MemoryRepository):
             },
         )
 
+        st.session_state["latest_knowledge_extraction_job_id"] = job.id
+        st.success(t("processing_started_email"))
+        st.rerun()
+
+    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
+
+    confluence_pdfs = st.file_uploader(
+        t("confluence_upload_label", count=MAX_PDF_FILES),
+        type=["pdf", "zip", "7z"],
+        accept_multiple_files=True,
+        help=t("confluence_upload_help", count=MAX_PDF_FILES),
+        key="confluence_pdf_uploads",
+    )
+    st.caption(t("confluence_upload_caption", count=MAX_PDF_FILES))
+
+    if st.button(
+        t("process_confluence_files"),
+        key="process_confluence_files_button",
+        type="primary",
+    ):
+        if not confluence_pdfs:
+            st.warning(t("choose_confluence_warning"))
+            return
+
+        try:
+            file_specs = stage_pdf_uploads(
+                confluence_pdfs,
+                prefix="project_brain_confluence_stage_",
+            )
+        except ValueError as exc:
+            st.error(str(exc))
+            return
+
+        service = KnowledgeExtractionJobService()
+        job = service.start(
+            process_confluence_pdfs_job,
+            file_specs=file_specs,
+            project_id=project_id,
+            metadata={
+                "source": "confluence_pdf",
+                "project_id": project_id,
+                "files": [spec["name"] for spec in file_specs],
+                "notification_email": get_authenticated_email(),
+            },
+        )
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
         st.success(t("processing_started_email"))
         st.rerun()

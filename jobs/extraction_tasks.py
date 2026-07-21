@@ -246,6 +246,73 @@ def process_confluence_article_job(text: str, title: str = "Confluence article",
     return {"source": source_save_result, "result": result, "save_result": save_result}
 
 
+def process_confluence_pdfs_job(
+    file_specs: list[dict[str, str]],
+    project_id: str = "default",
+    job: RunningJob | None = None,
+) -> dict[str, Any]:
+    progress = JobProgress(job) if job else None
+    saved_results = []
+    total = max(len(file_specs), 1)
+
+    for index, spec in enumerate(file_specs, start=1):
+        file_name = spec["name"]
+        title = Path(file_name).stem or "Confluence page"
+        if progress:
+            progress.update(
+                (index - 1) / total,
+                "extraction",
+                f"Reading Confluence PDF {index}/{total}: {file_name}",
+            )
+
+        text = extract_file_text(spec["path"])
+        if not text.strip():
+            saved_results.append({
+                "file_name": file_name,
+                "status": "skipped",
+                "warning": "No readable text found. The PDF may require OCR.",
+            })
+            continue
+
+        result = process_confluence_text(text=text, title=title)
+        source_save_result = _save_source(
+            file_name,
+            "confluence_pdf",
+            file_name,
+            text,
+            project_id,
+        )
+        extract_participants_from_text(
+            text=text,
+            source_type="confluence",
+            source_ref=file_name,
+            project_id=project_id,
+        )
+        save_result = _save_items(
+            result.get("items", []),
+            default_source=f"confluence_pdf:{file_name}",
+            project_id=project_id,
+        )
+        saved_results.append({
+            "file_name": file_name,
+            "status": "completed",
+            "source": source_save_result,
+            "result": result,
+            "save_result": save_result,
+        })
+
+        if progress:
+            progress.update(
+                index / total,
+                "memory",
+                f"Saved Confluence PDF knowledge: {file_name}",
+            )
+
+    if progress:
+        progress.update(1.0, "completed", "Confluence PDF extraction completed")
+    return {"files_count": len(file_specs), "results": saved_results}
+
+
 def process_jira_pdfs_job(file_specs: list[dict[str, str]], project_id: str = "default", job: RunningJob | None = None) -> dict[str, Any]:
     progress = JobProgress(job) if job else None
     pdf_files = [StagedPdfFile(path=spec["path"], name=spec["name"]) for spec in file_specs]

@@ -7,7 +7,8 @@ from pathlib import Path, PurePosixPath
 from zipfile import BadZipFile, ZipFile
 
 
-MAX_JIRA_PDFS = 20
+MAX_PDF_FILES = 20
+MAX_JIRA_PDFS = MAX_PDF_FILES
 MAX_SINGLE_PDF_BYTES = 50 * 1024 * 1024
 MAX_TOTAL_UNPACKED_BYTES = 500 * 1024 * 1024
 
@@ -21,8 +22,8 @@ def _safe_archive_name(name: str) -> PurePosixPath:
 
 
 def _unique_pdf_name(name: str, used_names: set[str]) -> str:
-    original = Path(str(name).replace("\\", "/")).name or "jira_ticket.pdf"
-    stem = Path(original).stem[:100] or "jira_ticket"
+    original = Path(str(name).replace("\\", "/")).name or "document.pdf"
+    stem = Path(original).stem[:100] or "document"
     candidate = f"{stem}.pdf"
     index = 2
     while candidate.lower() in used_names:
@@ -104,14 +105,14 @@ def _seven_zip_pdfs(data: bytes, work_dir: Path, archive_index: int) -> list[tup
         shutil.rmtree(extract_dir, ignore_errors=True)
 
 
-def stage_jira_uploads(uploaded_files, prefix: str = "project_brain_jira_stage_") -> list[dict[str, str]]:
+def stage_pdf_uploads(uploaded_files, prefix: str = "project_brain_pdf_stage_") -> list[dict[str, str]]:
     staged_dir = Path(tempfile.mkdtemp(prefix=prefix))
     used_names: set[str] = set()
     collected: list[tuple[str, bytes]] = []
 
     try:
         for archive_index, uploaded_file in enumerate(uploaded_files):
-            upload_name = uploaded_file.name or "jira_upload"
+            upload_name = uploaded_file.name or "pdf_upload"
             suffix = Path(upload_name).suffix.lower()
             payload = bytes(uploaded_file.getbuffer())
             if suffix == ".pdf":
@@ -142,3 +143,8 @@ def stage_jira_uploads(uploaded_files, prefix: str = "project_brain_jira_stage_"
     except Exception:
         shutil.rmtree(staged_dir, ignore_errors=True)
         raise
+
+
+def stage_jira_uploads(uploaded_files, prefix: str = "project_brain_jira_stage_") -> list[dict[str, str]]:
+    """Backward-compatible Jira wrapper around the shared PDF stager."""
+    return stage_pdf_uploads(uploaded_files, prefix=prefix)
