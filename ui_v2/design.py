@@ -1778,6 +1778,34 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 -webkit-text-fill-color: var(--pb-text-2) !important;
             }}
 
+            /* Recent changes is a compact, scrollable table. Streamlit adds
+               a vertical block gap around every expander by default. */
+            .st-key-recent_changes_scroll
+            div[data-testid="stVerticalBlock"]:has(> div[data-testid="stExpander"]) {{
+                gap: 0 !important;
+            }}
+
+            .st-key-recent_changes_scroll div[data-testid="stExpander"] {{
+                margin: 0 !important;
+            }}
+
+            .st-key-recent_changes_scroll div[data-testid="stExpander"] > details {{
+                border: 0 !important;
+                border-bottom: 1px solid var(--pb-border) !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+            }}
+
+            .st-key-recent_changes_scroll div[data-testid="stExpander"]:last-child > details {{
+                border-bottom: 0 !important;
+            }}
+
+            .st-key-recent_changes_scroll div[data-testid="stExpander"] > details > summary {{
+                min-height: 2.7rem !important;
+                padding: .48rem .65rem !important;
+                border-radius: 0 !important;
+            }}
+
             .st-key-pb_user_controls [data-testid="stHorizontalBlock"] {{
                 justify-content: flex-end !important;
                 align-items: center !important;
