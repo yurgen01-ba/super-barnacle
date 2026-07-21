@@ -37,7 +37,7 @@ class EmailNotificationService:
         message["From"] = self.sender
         message["To"] = recipient
         message["Subject"] = subject
-        message.set_content(body)
+        message.set_content(str(body), subtype="plain", charset="utf-8")
 
         smtp_class = smtplib.SMTP_SSL if self.use_ssl else smtplib.SMTP
         with smtp_class(self.host, self.port, timeout=30) as smtp:
@@ -47,6 +47,16 @@ class EmailNotificationService:
                 smtp.login(self.username, self.password)
             smtp.send_message(message)
         return True
+
+    def send_verification_email(self, *, recipient: str, name: str, verification_url: str) -> bool:
+        subject = "Project Brain: подтвердите адрес электронной почты"
+        body = (
+            f"Здравствуйте, {name or 'пользователь'}!\n\n"
+            "Чтобы завершить регистрацию в Project Brain, подтвердите адрес электронной почты:\n"
+            f"{verification_url}\n\n"
+            "Ссылка действует 24 часа. Если вы не создавали аккаунт, просто проигнорируйте письмо."
+        )
+        return self.send(recipient=recipient, subject=subject, body=body)
 
     def notify_job_finished(self, job) -> bool:
         recipient = str((job.metadata or {}).get("notification_email") or "").strip()

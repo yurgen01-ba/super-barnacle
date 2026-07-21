@@ -6,6 +6,7 @@ from repositories.memory_repository import MemoryRepository
 from services.jira_archive_service import MAX_JIRA_PDFS, stage_jira_uploads
 from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
+from ui_v2.auth import get_authenticated_email
 
 def _render_active_job(project_id: str):
     service = KnowledgeExtractionJobService()
@@ -42,10 +43,14 @@ def render_jira_tab(memory_repository: MemoryRepository):
                 process_jira_text_job,
                 text=jira_text,
                 project_id=project_id,
-                metadata={"source": "jira_text", "project_id": project_id},
+                metadata={
+                    "source": "jira_text",
+                    "project_id": project_id,
+                    "notification_email": get_authenticated_email(),
+                },
             )
             st.session_state["latest_knowledge_extraction_job_id"] = job.id
-            st.success("Jira text processing started in background.")
+            st.success("Обработка Jira запущена. Окно можно закрыть — после завершения придёт письмо.")
             st.rerun()
 
     st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
@@ -76,9 +81,17 @@ def render_jira_tab(memory_repository: MemoryRepository):
             process_jira_pdfs_job,
             file_specs=file_specs,
             project_id=project_id,
-            metadata={"source": "jira_pdf", "project_id": project_id, "files": [spec["name"] for spec in file_specs]},
+            metadata={
+                "source": "jira_pdf",
+                "project_id": project_id,
+                "files": [spec["name"] for spec in file_specs],
+                "notification_email": get_authenticated_email(),
+            },
         )
 
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success(f"Обработка {len(file_specs)} Jira PDF запущена в фоне.")
+        st.success(
+            f"Обработка {len(file_specs)} Jira PDF запущена. "
+            "Окно можно закрыть — после завершения придёт письмо."
+        )
         st.rerun()

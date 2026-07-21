@@ -1,4 +1,5 @@
 import streamlit as st
+from ui_v2.i18n import t
 
 from ui.confluence import render_confluence_tab
 from ui.jira import render_jira_tab
@@ -80,7 +81,7 @@ def _render_dashboard_loader(memory_repository):
 def render_dashboard(memory_repository):
     project_id = get_current_project_id()
     metrics = workspace_repository.dashboard_metrics(project_id)
-    st.title("Дашборд")
+    st.title(t("workspace"))
     st.caption("Обзор состояния проекта и загрузка данных")
 
     col1, col2, col3 = st.columns(3)

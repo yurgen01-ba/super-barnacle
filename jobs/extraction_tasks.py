@@ -18,6 +18,10 @@ from repositories.memory_repository import MemoryRepository
 from repositories.source_repository import SourceRepository
 from repositories.workspace_repository import workspace_repository
 from services.artifact_service import artifact_service
+from services.participant_extraction_service import (
+    extract_participants_from_text,
+    save_manual_participants,
+)
 from utils.text import chunk_text
 
 
@@ -181,6 +185,12 @@ def process_slack_text_job(text: str, chunk_size: int = 12, project_id: str = "d
     if progress:
         progress.update(0.05, "source", "Saving Slack source document")
     source_save_result = _save_source("Slack paste", "slack", "manual_paste", text, project_id)
+    extract_participants_from_text(
+        text=text,
+        source_type="slack",
+        source_ref="manual_paste",
+        project_id=project_id,
+    )
     if progress:
         progress.update(0.25, "extraction", "Extracting Slack knowledge")
     result = process_slack_text(text, chunk_size=chunk_size)
@@ -197,6 +207,12 @@ def process_jira_text_job(text: str, project_id: str = "default", job: RunningJo
     if progress:
         progress.update(0.05, "source", "Saving Jira source document")
     source_save_result = _save_source("Jira text paste", "jira_text", "manual_paste", text, project_id)
+    extract_participants_from_text(
+        text=text,
+        source_type="jira",
+        source_ref="manual_paste",
+        project_id=project_id,
+    )
     if progress:
         progress.update(0.25, "extraction", "Extracting Jira knowledge")
     result = process_jira_text(text)
@@ -213,6 +229,12 @@ def process_confluence_article_job(text: str, title: str = "Confluence article",
     if progress:
         progress.update(0.05, "source", "Saving Confluence source document")
     source_save_result = _save_source(title, "confluence", title, text, project_id)
+    extract_participants_from_text(
+        text=text,
+        source_type="confluence",
+        source_ref=title,
+        project_id=project_id,
+    )
     if progress:
         progress.update(0.25, "extraction", "Extracting Confluence knowledge")
     result = process_confluence_text(text=text, title=title)
@@ -235,6 +257,12 @@ def process_jira_pdfs_job(file_specs: list[dict[str, str]], project_id: str = "d
         if progress:
             progress.update(min(0.15 + index / max(len(results), 1) * 0.7, 0.85), "memory", f"Saving Jira PDF knowledge: {result.get('file_name')}")
         source_save_result = _save_source(result["file_name"], "jira_pdf", result["file_name"], result.get("text", ""), project_id)
+        extract_participants_from_text(
+            text=result.get("text", ""),
+            source_type="jira",
+            source_ref=result["file_name"],
+            project_id=project_id,
+        )
         save_result = _save_items(result.get("items", []), default_source=f"jira_pdf:{result['file_name']}", project_id=project_id)
         saved_results.append({"source": source_save_result, "result": result, "save_result": save_result})
     if progress:
@@ -377,6 +405,11 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
 
         uploaded_file = StagedUploadedFile(path=spec["path"], name=spec["name"])
         runtime_settings = dict(settings)
+        participant_names = [
+            " ".join(str(name).split())
+            for name in runtime_settings.pop("participant_names", [])
+            if str(name).strip()
+        ]
 
         if progress:
             audio_callback, vision_callback, fact_callback = _make_meeting_progress_callbacks(
@@ -397,6 +430,29 @@ def process_meeting_videos_job(file_specs: list[dict[str, str]], settings: dict[
             project_id=project_id,
             **runtime_settings,
         )
+        if participant_names:
+            speaker_map = {
+                f"SPEAKER_{index:02d}": name
+                for index, name in enumerate(participant_names)
+            }
+
+            def replace_speakers(value):
+                if isinstance(value, str):
+                    for speaker, participant in speaker_map.items():
+                        value = value.replace(speaker, participant)
+                    return value
+                if isinstance(value, list):
+                    return [replace_speakers(item) for item in value]
+                if isinstance(value, dict):
+                    return {key: replace_speakers(item) for key, item in value.items()}
+                return value
+
+            result = replace_speakers(result)
+            save_manual_participants(
+                names=participant_names,
+                project_id=project_id,
+                source_ref=spec["name"],
+            )
 
         if progress:
             progress.update(_progress_between((index - 1) / total, 1 / total, 0.90), "meeting:saving", f"{spec['name']}: saving full transcript and extracted knowledge")

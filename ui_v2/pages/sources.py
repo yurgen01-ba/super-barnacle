@@ -1,14 +1,16 @@
 import streamlit as st
 
-from ui_v2.adapters.source_adapters import SOURCE_OPTIONS, render_source_adapter
+from ui_v2.adapters.source_adapters import render_source_adapter, source_options
+from ui_v2.i18n import t
 from ui_v2.state import get_selected_source, set_selected_source
 
 
 def render_sources(memory_repository):
-    st.title("Sources")
-    st.caption("Управление всеми источниками проекта")
+    st.title(t("sources"))
+    st.caption(t("sources_caption"))
 
     current = get_selected_source()
+    SOURCE_OPTIONS = source_options()
     labels = list(SOURCE_OPTIONS.values())
     keys = list(SOURCE_OPTIONS.keys())
 

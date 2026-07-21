@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
 from repositories.user_repository import user_repository
+from services.email_notification_service import email_notification_service
+from ui_v2.i18n import t
 
 
 LOCAL_USER_KEY = "project_brain_local_user"
@@ -24,6 +28,11 @@ def _oidc_is_logged_in() -> bool:
 
 def _oidc_provider() -> str:
     issuer = str(_oidc_claim("iss", "")).lower()
+    subject = str(_oidc_claim("sub", "")).lower()
+    if subject.startswith("facebook|"):
+        return "facebook"
+    if subject.startswith("google-oauth2|"):
+        return "google"
     if "google" in issuer:
         return "google"
     if "facebook" in issuer or "meta" in issuer:
@@ -41,6 +50,7 @@ def get_authenticated_user() -> dict | None:
             name=str(_oidc_claim("name", "") or email),
             provider=_oidc_provider(),
             subject=str(_oidc_claim("sub", "") or email),
+            avatar_url=str(_oidc_claim("picture", "") or "") or None,
         )
     return st.session_state.get(LOCAL_USER_KEY)
 
@@ -51,11 +61,20 @@ def get_authenticated_email() -> str | None:
 
 
 def logout():
+    st.session_state.pop("pb_intro_seen", None)
+    st.session_state.pop("pb_preferences_user", None)
     if _oidc_is_logged_in():
         st.logout()
         return
     st.session_state.pop(LOCAL_USER_KEY, None)
     st.rerun()
+
+
+def refresh_local_user(user_id: str) -> dict | None:
+    user = user_repository.get_by_id(user_id)
+    if user:
+        st.session_state[LOCAL_USER_KEY] = user
+    return user
 
 
 def _provider_configured(provider: str) -> bool:
@@ -70,24 +89,66 @@ def _provider_configured(provider: str) -> bool:
 def _render_email_login():
     with st.form("email_login_form"):
         email = st.text_input("Email", key="auth_login_email")
-        password = st.text_input("Пароль", type="password", key="auth_login_password")
-        submitted = st.form_submit_button("Войти", type="primary", width="stretch")
+        password = st.text_input(
+            t("password"),
+            type="password",
+            placeholder="••••••••",
+            key="auth_login_password",
+        )
+        submitted = st.form_submit_button(t("sign_in"), type="primary", width="stretch")
     if submitted:
-        user = user_repository.authenticate(email, password)
+        try:
+            user = user_repository.authenticate(email, password)
+        except ValueError as exc:
+            st.error(str(exc))
+            return
         if not user:
             st.error("Неверный email или пароль.")
             return
         st.session_state[LOCAL_USER_KEY] = user
         st.rerun()
+    with st.expander("Не пришло письмо подтверждения?", expanded=False):
+        resend_email = st.text_input("Email для повторной отправки", key="auth_resend_email")
+        if st.button("Отправить письмо повторно", key="auth_resend_button"):
+            token = user_repository.create_verification_token(resend_email)
+            user = user_repository.get_by_email(resend_email)
+            if token and user:
+                base_url = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
+                try:
+                    sent = email_notification_service.send_verification_email(
+                        recipient=user["email"],
+                        name=user["name"],
+                        verification_url=f"{base_url}/?verify_token={token}",
+                    )
+                except Exception as exc:
+                    st.error(f"Письмо не отправлено: {exc}")
+                else:
+                    if sent:
+                        st.success("Новое письмо отправлено. Ссылка действует 24 часа.")
+                    else:
+                        st.error("SMTP не настроен.")
+            else:
+                st.info("Если неподтверждённый аккаунт существует, на него будет отправлено письмо.")
 
 
 def _render_email_registration():
     with st.form("email_registration_form"):
-        name = st.text_input("Имя", key="auth_register_name")
+        name = st.text_input(t("name"), key="auth_register_name")
         email = st.text_input("Email", key="auth_register_email")
-        password = st.text_input("Пароль", type="password", key="auth_register_password")
-        confirmation = st.text_input("Повторите пароль", type="password", key="auth_register_confirmation")
-        submitted = st.form_submit_button("Зарегистрироваться", type="primary", width="stretch")
+        password = st.text_input(
+            t("password"),
+            type="password",
+            placeholder="8+ chars: Aa, 1, !",
+            key="auth_register_password",
+        )
+        confirmation = st.text_input(
+            t("repeat_password"),
+            type="password",
+            placeholder="8+ chars: Aa, 1, !",
+            key="auth_register_confirmation",
+        )
+        st.caption("Минимум 8 символов: латинская буква, цифра и спецсимвол; без пробелов и кириллицы.")
+        submitted = st.form_submit_button(t("sign_up"), type="primary", width="stretch")
     if submitted:
         if password != confirmation:
             st.error("Пароли не совпадают.")
@@ -97,33 +158,60 @@ def _render_email_registration():
         except ValueError as exc:
             st.error(str(exc))
             return
-        st.session_state[LOCAL_USER_KEY] = user
-        st.rerun()
+        token = user.pop("_verification_token")
+        base_url = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
+        verification_url = f"{base_url}/?verify_token={token}"
+        try:
+            sent = email_notification_service.send_verification_email(
+                recipient=user["email"],
+                name=user["name"],
+                verification_url=verification_url,
+            )
+        except Exception as exc:
+            st.error(f"Аккаунт создан, но письмо не отправлено: {exc}")
+            return
+        if sent:
+            st.success("Проверьте почту и подтвердите регистрацию по ссылке. Ссылка действует 24 часа.")
+        else:
+            st.error("SMTP не настроен: письмо подтверждения не отправлено.")
+
+
+def _handle_email_verification() -> None:
+    token = str(st.query_params.get("verify_token", "") or "")
+    if not token:
+        return
+    verified = user_repository.verify_email(token)
+    del st.query_params["verify_token"]
+    if verified:
+        st.success("Email подтверждён. Теперь можно войти в аккаунт.")
+    else:
+        st.error("Ссылка подтверждения недействительна или истекла.")
 
 
 def render_auth_gate() -> bool:
+    _handle_email_verification()
     if get_authenticated_user():
         return True
 
     left, center, right = st.columns([0.28, 0.44, 0.28])
     with center:
         st.markdown(
-            """
+            f"""
             <div class="pb-auth-heading">
-                <div class="pb-brand-mark">PB</div>
+                <div class="pb-auth-logo" aria-label="Project Brain"></div>
                 <h1>Project Brain</h1>
-                <p>Войдите или создайте аккаунт</p>
+                <p>{t('login_intro')}</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        login_tab, registration_tab = st.tabs(["Вход", "Регистрация"])
+        login_tab, registration_tab = st.tabs([t("login"), t("registration")])
         with login_tab:
             _render_email_login()
         with registration_tab:
             _render_email_registration()
 
-        st.markdown('<div class="pb-auth-separator"><span>или</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="pb-auth-separator"><span>{t("or")}</span></div>', unsafe_allow_html=True)
         google_ready = _provider_configured("google")
         facebook_ready = _provider_configured("facebook")
         social_col1, social_col2 = st.columns(2)

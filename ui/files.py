@@ -9,6 +9,7 @@ from jobs.extraction_tasks import process_files_job
 from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
+from ui_v2.auth import get_authenticated_email
 from ui_v2.state import get_current_project_id
 
 
@@ -65,6 +66,7 @@ def render_files_tab(memory_repository):
                 "source": "files",
                 "project_id": project_id,
                 "files": [item["name"] for item in specs],
+                "notification_email": get_authenticated_email(),
             },
         )
         workspace_repository.log_event(
@@ -74,5 +76,5 @@ def render_files_tab(memory_repository):
             {"job_id": job.id, "files": [item["name"] for item in specs]},
         )
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success("Обработка файлов запущена.")
+        st.success("Обработка файлов запущена. Окно можно закрыть — после завершения придёт письмо.")
         st.rerun()

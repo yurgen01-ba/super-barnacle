@@ -5,6 +5,7 @@ from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
 from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
+from ui_v2.auth import get_authenticated_email
 
 
 def _render_active_job(project_id: str):
@@ -52,9 +53,14 @@ def render_confluence_tab(memory_repository: MemoryRepository):
             text=confluence_text,
             title=title,
             project_id=project_id,
-            metadata={"source": "confluence", "title": title, "project_id": project_id},
+            metadata={
+                "source": "confluence",
+                "title": title,
+                "project_id": project_id,
+                "notification_email": get_authenticated_email(),
+            },
         )
 
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success("Confluence processing started in background.")
+        st.success("Обработка Confluence запущена. Окно можно закрыть — после завершения придёт письмо.")
         st.rerun()

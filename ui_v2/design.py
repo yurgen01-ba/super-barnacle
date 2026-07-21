@@ -1,7 +1,75 @@
 import streamlit as st
+from ui_v2.assets import logo_data_uri, svg_data_uri
 
 
-def inject_ui_v2_theme():
+def inject_ui_v2_theme(theme: str = "dark"):
+    light = theme == "light"
+    logo = logo_data_uri()
+    google_icon = svg_data_uri("google")
+    facebook_icon = svg_data_uri("facebook")
+    slack_icon = svg_data_uri("slack")
+    jira_icon = svg_data_uri("jira")
+    confluence_icon = svg_data_uri("confluence")
+    light_overrides = """
+        .st-key-pb_navigation div[data-testid="stButton"] button,
+        .st-key-pb_navigation div[data-testid="stButton"] button p,
+        .st-key-pb_navigation div[data-testid="stButton"] button span {
+            color: #343840 !important;
+        }
+        .st-key-pb_navigation div[data-testid="stButton"] button[kind="primary"],
+        .st-key-pb_navigation div[data-testid="stButton"] button[kind="primary"] p {
+            color: #15171A !important;
+            background: #E5E9EF !important;
+        }
+        div[data-testid="stButton"] button:not([kind="primary"]),
+        div[data-testid="stButton"] button:not([kind="primary"]) p,
+        [data-testid="stFormSubmitButton"] button:not([kind*="primary"]),
+        [data-testid="stFormSubmitButton"] button:not([kind*="primary"]) p {
+            background: #FFFFFF !important;
+            color: #343840 !important;
+            -webkit-text-fill-color: #343840 !important;
+            border-color: #D6DAE1 !important;
+        }
+        div[data-testid="stSelectbox"] div[data-baseweb="select"],
+        div[data-testid="stSelectbox"] [role="group"],
+        div[data-testid="stSelectbox"] input[role="combobox"],
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stTextArea"] textarea {
+            background: #FFFFFF !important;
+            color: #15171A !important;
+            -webkit-text-fill-color: #15171A !important;
+            border-color: #D6DAE1 !important;
+        }
+        div[data-testid="stSelectbox"] *,
+        .st-key-pb_topbar div[data-testid="stButton"] button * {
+            color: #15171A !important;
+            -webkit-text-fill-color: #15171A !important;
+        }
+        div[data-testid="stExpander"],
+        div[data-testid="stExpander"] details,
+        div[data-testid="stExpander"] summary,
+        .st-key-pb_topbar,
+        .pb-panel,
+        .pb-source-card,
+        .pb-chat-bubble {
+            background: #FFFFFF !important;
+            color: #15171A !important;
+            border-color: #D6DAE1 !important;
+        }
+        div[data-testid="stMetric"] {
+            background: #FFFFFF !important;
+            color: #15171A !important;
+            border-color: #D6DAE1 !important;
+        }
+        div[data-testid="stMetric"] * {
+            color: #15171A !important;
+            -webkit-text-fill-color: #15171A !important;
+        }
+        h1, h2, h3, p, span, label,
+        .pb-brand-title, .pb-source-title, .pb-project-name {
+            color: #15171A !important;
+        }
+    """ if light else ""
     st.markdown(
         """
         <style>
@@ -678,6 +746,154 @@ def inject_ui_v2_theme():
                 background: rgba(255,255,255,0.03);
                 color: var(--pb-muted);
             }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <style>
+            :root {{
+                --pb-bg: {'#F4F6F8' if light else '#09090B'};
+                --pb-panel: {'#FFFFFF' if light else '#111318'};
+                --pb-panel-2: {'#EEF1F5' if light else '#18181B'};
+                --pb-border: {'#D6DAE1' if light else '#27272A'};
+                --pb-text: {'#15171A' if light else '#FAFAFA'};
+                --pb-text-2: {'#343840' if light else '#D4D4D8'};
+                --pb-muted: {'#68707D' if light else '#A1A1AA'};
+            }}
+
+            .pb-brand-logo {{
+                width: 36px;
+                height: 36px;
+                object-fit: cover;
+                border-radius: 10px;
+                border: 1px solid var(--pb-border);
+            }}
+
+            .pb-auth-logo {{
+                width: 74px;
+                height: 74px;
+                border-radius: 22px;
+                background: url('{logo}') center/cover no-repeat;
+                box-shadow: 0 18px 50px rgba(0,0,0,.28);
+            }}
+
+            div[data-testid="stTextInput"] input[type="password"] {{
+                padding-right: 3.4rem !important;
+            }}
+
+            .st-key-auth_google button::before,
+            .st-key-auth_facebook button::before,
+            .st-key-ui_v2_source_slack button::before,
+            .st-key-ui_v2_source_jira button::before,
+            .st-key-ui_v2_source_confluence button::before {{
+                content: "";
+                display: inline-flex;
+                flex: 0 0 1.15rem;
+                width: 1.15rem;
+                height: 1.15rem;
+                margin-right: .45rem;
+                background: currentColor;
+                mask-position: center;
+                mask-repeat: no-repeat;
+                mask-size: contain;
+            }}
+            .st-key-auth_google button::before {{ mask-image: url('{google_icon}'); }}
+            .st-key-auth_facebook button::before {{ mask-image: url('{facebook_icon}'); }}
+            .st-key-ui_v2_source_slack button::before {{ mask-image: url('{slack_icon}'); }}
+            .st-key-ui_v2_source_jira button::before {{ mask-image: url('{jira_icon}'); }}
+            .st-key-ui_v2_source_confluence button::before {{ mask-image: url('{confluence_icon}'); }}
+
+            div[data-testid="stButton"] button,
+            [data-testid="stFormSubmitButton"] button,
+            div[data-testid="stExpander"],
+            div[data-testid="stTabs"] button {{
+                transition: transform .18s ease, background-color .22s ease,
+                    border-color .22s ease, box-shadow .22s ease !important;
+            }}
+            div[data-testid="stButton"] button:hover,
+            [data-testid="stFormSubmitButton"] button:hover {{
+                transform: translateY(-1px);
+                box-shadow: 0 8px 24px rgba(0,0,0,.16) !important;
+            }}
+            div[data-testid="stExpander"] details[open] > div {{
+                animation: pbReveal .24s ease both;
+            }}
+            .block-container {{ animation: pbPageIn .28s ease both; }}
+
+            .pb-glass-loader {{
+                position: fixed;
+                inset: 0;
+                z-index: 99999;
+                display: grid;
+                place-items: center;
+                background: rgba(9,9,11,.72);
+                backdrop-filter: blur(24px);
+                animation: pbFadeIn .25s ease both;
+            }}
+            .pb-loader-card {{
+                position: relative;
+                width: min(520px, 86vw);
+                min-height: 280px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid rgba(255,255,255,.18);
+                border-radius: 30px;
+                background: linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.04));
+                box-shadow: 0 30px 100px rgba(0,0,0,.45);
+                overflow: hidden;
+            }}
+            .pb-loader-card img {{ width: 92px; height: 92px; border-radius: 28px; object-fit: cover; }}
+            .pb-loader-orbit {{
+                position: absolute;
+                width: 126px;
+                height: 126px;
+                border: 2px solid transparent;
+                border-top-color: #FF4B4B;
+                border-radius: 50%;
+                animation: pbSpin 1.1s linear infinite;
+            }}
+            .pb-loader-messages {{ position: relative; width: 100%; height: 52px; margin-top: 34px; }}
+            .pb-loader-messages span {{
+                position: absolute;
+                inset: 0;
+                color: #FAFAFA;
+                text-align: center;
+                opacity: 0;
+                animation: pbMessage 2.7s ease infinite;
+            }}
+            .pb-loader-messages span:nth-child(2) {{ animation-delay: .9s; }}
+            .pb-loader-messages span:nth-child(3) {{ animation-delay: 1.8s; }}
+            .pb-route-loader {{ display:flex; justify-content:center; gap:7px; padding:1rem; }}
+            .pb-route-loader span {{ width:8px; height:8px; border-radius:50%; background:#FF4B4B; animation:pbDot .7s ease infinite alternate; }}
+            .pb-route-loader span:nth-child(2) {{ animation-delay:.14s; }}
+            .pb-route-loader span:nth-child(3) {{ animation-delay:.28s; }}
+
+            {light_overrides}
+
+            @keyframes pbSpin {{ to {{ transform: rotate(360deg); }} }}
+            @keyframes pbFadeIn {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
+            @keyframes pbPageIn {{ from {{ opacity:.2; transform:translateY(7px); }} to {{ opacity:1; transform:none; }} }}
+            @keyframes pbReveal {{ from {{ opacity:0; transform:translateY(-6px); }} to {{ opacity:1; transform:none; }} }}
+            @keyframes pbDot {{ to {{ transform:translateY(-7px); opacity:.45; }} }}
+            @keyframes pbMessage {{ 0%,100% {{ opacity:0; transform:translateY(7px); }} 15%,28% {{ opacity:1; transform:none; }} 40% {{ opacity:0; transform:translateY(-7px); }} }}
+
+            @media (max-width: 980px) {{
+                .block-container {{ padding: .75rem !important; }}
+                [data-testid="stHorizontalBlock"] {{ flex-wrap: wrap !important; gap: .6rem !important; }}
+                [data-testid="stHorizontalBlock"] > div {{ min-width: min(100%, 240px) !important; flex: 1 1 240px !important; }}
+                .st-key-pb_navigation div[data-testid="stButton"] button {{ font-size: .76rem !important; }}
+                .pb-project-table-head {{ display:none; }}
+            }}
+            @media (max-width: 640px) {{
+                h1 {{ font-size: 2rem !important; }}
+                .pb-brand-title, .pb-caption {{ display:none; }}
+                .pb-brand {{ justify-content:center; }}
+                .pb-loader-card {{ min-height:240px; }}
+            }}
         </style>
         """,
         unsafe_allow_html=True,

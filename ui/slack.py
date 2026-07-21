@@ -6,6 +6,7 @@ from repositories.memory_repository import MemoryRepository
 from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
+from ui_v2.auth import get_authenticated_email
 
 
 def _render_active_job(project_id: str):
@@ -52,9 +53,13 @@ def render_slack_tab(memory_repository: MemoryRepository):
             text=slack_text,
             chunk_size=chunk_size,
             project_id=project_id,
-            metadata={"source": "slack", "project_id": project_id},
+            metadata={
+                "source": "slack",
+                "project_id": project_id,
+                "notification_email": get_authenticated_email(),
+            },
         )
 
         st.session_state["latest_knowledge_extraction_job_id"] = job.id
-        st.success("Slack processing started in background.")
+        st.success("Обработка Slack запущена. Окно можно закрыть — после завершения придёт письмо.")
         st.rerun()
