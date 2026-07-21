@@ -8,7 +8,7 @@ from ui_v2.auth import get_authenticated_user, render_auth_gate
 from ui_v2.i18n import set_language
 from ui_v2.layout.chat import render_chat_panel
 from ui_v2.layout.menu import render_menu
-from ui_v2.layout.topbar import render_topbar
+from ui_v2.layout.topbar import handle_user_control_actions, render_topbar, render_user_controls
 from ui_v2.pages.page_registry import render_current_page
 from ui_v2.state import get_current_project_id
 from ui_v2.loaders import render_intro_loader, render_transition_loader
@@ -24,12 +24,10 @@ def render_app_shell_v2():
 
     inject_ui_v2_theme(st.session_state.get("pb_theme", "dark"))
 
-    if st.session_state.get("pb_boot_loader_version") != 2:
-        render_intro_loader(duration=1.8)
-        st.session_state.pb_boot_loader_version = 2
-
     if not render_auth_gate():
         return
+
+    handle_user_control_actions()
 
     user = get_authenticated_user() or {}
     workspace_repository.ensure_user_workspace(
@@ -65,4 +63,5 @@ def render_app_shell_v2():
         render_current_page(memory_repository)
 
     with chat_col:
+        render_user_controls()
         render_chat_panel(memory_repository)

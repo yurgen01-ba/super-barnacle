@@ -52,10 +52,16 @@ def _render_project_team(project_id: str, owner_user_id: str, current_user_id: s
         info_col, status_col, action_col = st.columns([0.50, 0.22, 0.28], vertical_alignment="center")
         with info_col:
             display_name = member.get("name") or member["email"]
-            st.markdown(f"**{escape(display_name)}**")
-            st.caption(f"{member['email']} · {t(member['role'])}")
+            st.markdown(
+                f'<div class="pb-member-name">{escape(display_name)}</div>'
+                f'<div class="pb-member-meta">{escape(member["email"])} · {t(member["role"])}</div>',
+                unsafe_allow_html=True,
+            )
         with status_col:
-            st.caption(member_status)
+            st.markdown(
+                f'<span class="pb-member-status">{member_status}</span>',
+                unsafe_allow_html=True,
+            )
         with action_col:
             if is_owner and member["role"] != "owner":
                 button_col, remove_col = st.columns(2)

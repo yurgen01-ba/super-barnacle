@@ -1,8 +1,10 @@
+from html import escape
+
 import streamlit as st
 
+from repositories.user_repository import user_repository
 from repositories.workspace_repository import workspace_repository
 from ui_v2.auth import get_authenticated_user, logout
-from repositories.user_repository import user_repository
 from ui_v2.i18n import LANGUAGE_LABELS, get_language, set_language, t
 from ui_v2.pages.profile import avatar_source
 from ui_v2.state import get_current_project_id, set_current_page, set_current_project
@@ -46,9 +48,8 @@ def render_topbar():
     st.session_state["ui_v2_topbar_project"] = project_id
 
     with st.container(key="pb_topbar"):
-        project_col, status_col, preferences_col, user_col = st.columns(
-            [0.34, 0.18, 0.12, 0.36],
-            vertical_alignment="center",
+        project_col, status_col, preferences_col = st.columns(
+            [0.56, 0.24, 0.20], vertical_alignment="center"
         )
         with project_col:
             st.selectbox(
@@ -75,7 +76,7 @@ def render_topbar():
                 with language_col:
                     current_language = get_language()
                     st.button(
-                        "🌐",
+                        "\U0001F310",
                         key="pb_language_cycle",
                         help=f"{t('language')}: {t('language_' + current_language)}",
                         on_click=_cycle_language,
@@ -83,24 +84,37 @@ def render_topbar():
                 with theme_col:
                     theme = st.session_state.get("pb_theme", "dark")
                     st.button(
-                        "☀" if theme == "dark" else "☾",
+                        "\u2600" if theme == "dark" else "\u263e",
                         key="pb_theme_toggle",
                         help=t("switch_to_light" if theme == "dark" else "switch_to_dark"),
                         on_click=_toggle_theme,
                     )
-        with user_col:
-            user = get_authenticated_user() or {}
-            avatar_col, name_col = st.columns([0.25, 0.75], vertical_alignment="center")
-            with avatar_col:
-                st.image(avatar_source(user), width=38)
-            with name_col:
-                if st.button(
-                    user.get("name") or user.get("email", "User"),
-                    key="open_user_profile",
-                    width="stretch",
-                    help=t("profile"),
-                ):
-                    set_current_page("profile")
-                    st.rerun()
-            if st.button(t("logout"), key="auth_logout", width="stretch"):
-                logout()
+
+
+def handle_user_control_actions() -> None:
+    action = str(st.query_params.get("account_action", "") or "")
+    if not action:
+        return
+    del st.query_params["account_action"]
+    if action == "profile":
+        set_current_page("profile")
+    elif action == "logout":
+        logout()
+
+
+def render_user_controls() -> None:
+    """Compact profile links rendered directly above the chat panel."""
+    user = get_authenticated_user() or {}
+    name = escape(str(user.get("name") or user.get("email") or "User"))
+    avatar = escape(avatar_source(user), quote=True)
+    with st.container(key="pb_user_controls"):
+        st.markdown(
+            f"""
+            <div class="pb-user-inline">
+                <img class="pb-user-avatar" src="{avatar}" alt="{name}">
+                <a class="pb-account-link" href="?account_action=profile">{name}</a>
+                <a class="pb-logout-link" href="?account_action=logout">{t('logout')}</a>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )

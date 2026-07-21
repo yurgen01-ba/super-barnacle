@@ -108,7 +108,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
             }
 
             .block-container {
-                padding: 1.25rem 1.4rem 2rem !important;
+                padding: 0.45rem 1.4rem 2rem !important;
                 max-width: 100% !important;
             }
 
@@ -659,13 +659,28 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 border-radius: 16px;
                 background: rgba(17,19,24,0.92);
                 padding: 1rem;
-                min-height: 108px;
+                min-height: 72px;
+                display: flex;
+                align-items: center;
             }
 
             .pb-source-title {
                 color: white;
                 font-weight: 720;
-                margin-bottom: 0.3rem;
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                margin: 0;
+            }
+
+            .pb-source-icon {
+                display: inline-block;
+                width: 1.1em;
+                height: 1.1em;
+                flex: 0 0 1.1em;
+                background: currentColor;
+                -webkit-mask: var(--pb-source-icon-url) center / contain no-repeat;
+                mask: var(--pb-source-icon-url) center / contain no-repeat;
             }
 
             .pb-muted {
@@ -838,6 +853,270 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 transform: none !important;
             }}
 
+            .st-key-pb_topbar {{
+                padding: .62rem .8rem .38rem !important;
+                margin-bottom: 1rem !important;
+                background: var(--pb-panel) !important;
+            }}
+
+            .st-key-pb_topbar_preferences {{
+                margin-right: 0 !important;
+            }}
+
+            .st-key-pb_user_controls {{
+                padding: .38rem .5rem !important;
+                margin: 0 0 .6rem 0 !important;
+                border: 0 !important;
+                background: transparent !important;
+            }}
+
+            .pb-user-inline {{
+                min-height: 46px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: .72rem;
+                white-space: nowrap;
+            }}
+
+            .pb-user-avatar {{
+                width: 42px !important;
+                height: 42px !important;
+                flex: 0 0 42px;
+                border-radius: 50% !important;
+                object-fit: cover !important;
+                border: 1px solid var(--pb-border) !important;
+            }}
+
+            .pb-account-link,
+            .pb-logout-link {{
+                font-size: .84rem !important;
+                font-weight: 560;
+                line-height: 1;
+                text-decoration: none !important;
+                border: 0 !important;
+                background: transparent !important;
+            }}
+
+            .pb-account-link {{
+                color: var(--pb-text-2) !important;
+            }}
+
+            .pb-logout-link {{
+                color: var(--pb-red) !important;
+                margin-left: .12rem;
+            }}
+
+            .pb-account-link:hover,
+            .pb-logout-link:hover {{
+                text-decoration: underline !important;
+                text-underline-offset: 3px;
+            }}
+
+            h1 {{
+                font-size: clamp(2rem, 3vw, 2.65rem) !important;
+                line-height: 1.08 !important;
+                letter-spacing: -.035em !important;
+                margin: 0 0 .65rem !important;
+            }}
+
+            h2 {{
+                font-size: clamp(1.45rem, 2vw, 1.8rem) !important;
+                line-height: 1.18 !important;
+                letter-spacing: -.02em !important;
+                margin: .8rem 0 .55rem !important;
+            }}
+
+            h3, h4 {{
+                font-size: 1.18rem !important;
+                line-height: 1.25 !important;
+                letter-spacing: -.01em !important;
+                margin: .65rem 0 .45rem !important;
+            }}
+
+            [data-testid="stCaptionContainer"],
+            [data-testid="stCaptionContainer"] p {{
+                color: var(--pb-muted) !important;
+                font-size: .84rem !important;
+                line-height: 1.45 !important;
+            }}
+
+            .pb-project-table,
+            .pb-project-table-head,
+            [class*="st-key-pb_project_row_"] {{
+                border-color: var(--pb-border) !important;
+            }}
+
+            .pb-project-table-head {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-muted) !important;
+            }}
+
+            [class*="st-key-pb_project_row_"] {{
+                background: var(--pb-panel) !important;
+            }}
+
+            .pb-table-project-name,
+            .pb-table-cell {{
+                color: var(--pb-text-2) !important;
+            }}
+
+            .pb-current-badge {{
+                color: var(--pb-muted) !important;
+                border-color: var(--pb-border) !important;
+                background: var(--pb-panel-2) !important;
+            }}
+
+            div[data-testid="stExpander"],
+            div[data-testid="stExpander"] details,
+            div[data-testid="stExpander"] summary {{
+                background: var(--pb-panel) !important;
+                color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            div[data-testid="stExpander"] summary * {{
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+            }}
+
+            div[data-testid="stButton"] button:disabled,
+            div[data-testid="stButton"] button:disabled * {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-muted) !important;
+                -webkit-text-fill-color: var(--pb-muted) !important;
+                border-color: var(--pb-border) !important;
+                opacity: .72 !important;
+            }}
+
+            .pb-member-name {{
+                color: var(--pb-text) !important;
+                font-size: .94rem !important;
+                font-weight: 700;
+                margin-bottom: .18rem;
+            }}
+
+            .pb-member-meta,
+            .pb-member-status {{
+                color: var(--pb-muted) !important;
+                font-size: .8rem !important;
+                line-height: 1.35;
+                overflow-wrap: anywhere;
+            }}
+
+            div[data-testid="stMetric"],
+            .pb-panel,
+            .pb-source-card,
+            .pb-menu-block,
+            .pb-project-card,
+            .pb-chat-bubble {{
+                background: var(--pb-panel) !important;
+                color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            div[data-testid="stButton"] button:not([kind="primary"]),
+            [data-testid="stFormSubmitButton"] button:not([kind*="primary"]),
+            [data-testid="stDownloadButton"] button {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            div[data-testid="stTextArea"] textarea,
+            div[data-testid="stTextInput"] input,
+            div[data-testid="stSelectbox"] div[data-baseweb="select"],
+            div[data-testid="stSelectbox"] [role="group"],
+            div[data-testid="stSelectbox"] input[role="combobox"] {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-text) !important;
+                -webkit-text-fill-color: var(--pb-text) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            div[data-testid="stTabs"] button {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-muted) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            div[data-testid="stTabs"] button[aria-selected="true"],
+            div[data-testid="stTabs"] button[aria-selected="true"] * {{
+                color: var(--pb-text) !important;
+                -webkit-text-fill-color: var(--pb-text) !important;
+            }}
+
+            div[data-testid="stFileUploader"],
+            [data-testid="stFileUploaderDropzone"],
+            [data-testid="stFileUploaderDropzone"] > div,
+            div[data-testid="stFileUploader"] section {{
+                background: var(--pb-panel) !important;
+                color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            [data-testid="stFileUploaderDropzone"] button,
+            [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            [data-testid="stFileUploaderDropzone"] button *,
+            [data-testid="stFileUploaderDropzoneInstructions"],
+            [data-testid="stFileUploaderDropzoneInstructions"] * {{
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+            }}
+
+            div[data-testid="stJson"],
+            div[data-testid="stJson"] > div,
+            div[data-testid="stJson"] pre,
+            div[data-testid="stJson"] .react-json-view,
+            div[data-baseweb="popover"],
+            div[data-baseweb="menu"],
+            [data-testid="stSelectboxVirtualDropdown"],
+            [role="listbox"],
+            [role="option"],
+            [role="option"] > div {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            [role="option"][data-focused="true"],
+            [role="option"][aria-selected="true"],
+            [role="option"]:hover,
+            [role="option"][data-focused="true"] > div,
+            [role="option"][aria-selected="true"] > div,
+            [role="option"]:hover > div {{
+                background: var(--pb-panel) !important;
+                color: var(--pb-text) !important;
+                -webkit-text-fill-color: var(--pb-text) !important;
+            }}
+
+            [data-testid="stCheckbox"] label:not([data-selected="true"]) > div:first-of-type,
+            [data-testid="stRadioOption"]:not([data-selected="true"]) > div > div > div:first-child,
+            [data-testid="stRadioOption"]:not([data-selected="true"]) > div > div > div:first-child > div {{
+                background: var(--pb-panel-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            [role="tooltip"],
+            [data-testid="stTooltipContent"] {{
+                background: var(--pb-panel-2) !important;
+                color: var(--pb-text-2) !important;
+                border-color: var(--pb-border) !important;
+            }}
+
+            [data-testid="stTooltipContent"] *,
+            [role="tooltip"] * {{
+                color: var(--pb-text-2) !important;
+                -webkit-text-fill-color: var(--pb-text-2) !important;
+            }}
+
             .pb-brand-logo img,
             .pb-auth-logo img,
             .pb-loader-logo img {{
@@ -959,22 +1238,45 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 z-index: 99999;
                 display: grid;
                 place-items: center;
-                background: rgba(9,9,11,.72);
-                backdrop-filter: blur(24px);
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                background:
+                    radial-gradient(circle at 18% 22%, rgba(255,75,75,.18), transparent 34%),
+                    radial-gradient(circle at 82% 76%, rgba(59,130,246,.16), transparent 36%),
+                    rgba(9,9,11,.76);
+                backdrop-filter: blur(30px) saturate(145%);
+                -webkit-backdrop-filter: blur(30px) saturate(145%);
                 animation: pbFadeIn .25s ease both;
+            }}
+            .pb-glass-loader::before {{
+                content: "";
+                position: absolute;
+                inset: -45%;
+                background: linear-gradient(
+                    112deg,
+                    transparent 38%,
+                    rgba(255,255,255,.04) 44%,
+                    rgba(255,255,255,.26) 50%,
+                    rgba(255,255,255,.05) 56%,
+                    transparent 62%
+                );
+                transform: translateX(-38%) rotate(4deg);
+                animation: pbGlassSweep 2.4s ease-in-out infinite;
+                pointer-events: none;
             }}
             .pb-loader-card {{
                 position: relative;
-                width: min(520px, 86vw);
-                min-height: 280px;
+                width: 100vw;
+                min-height: 100vh;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                border: 1px solid rgba(255,255,255,.18);
-                border-radius: 30px;
-                background: linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.04));
-                box-shadow: 0 30px 100px rgba(0,0,0,.45);
+                border: 0;
+                border-radius: 0;
+                background: linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.015));
+                box-shadow: inset 0 0 120px rgba(255,255,255,.035);
                 overflow: hidden;
             }}
             .pb-loader-logo {{
@@ -994,12 +1296,17 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 border-radius: 50%;
                 animation: pbSpin 1.1s linear infinite;
             }}
-            .pb-loader-messages {{ position: relative; width: 100%; height: 52px; margin-top: 34px; }}
+            .pb-loader-messages {{ position: relative; width: min(980px, 90vw); height: 92px; margin-top: 48px; }}
             .pb-loader-messages span {{
                 position: absolute;
                 inset: 0;
                 color: #FAFAFA;
                 text-align: center;
+                font-size: clamp(1.7rem, 4vw, 3.5rem);
+                line-height: 1.12;
+                font-weight: 760;
+                letter-spacing: -.035em;
+                text-shadow: 0 10px 45px rgba(0,0,0,.45);
                 opacity: 0;
                 animation: pbMessage 2.7s ease infinite;
             }}
@@ -1013,6 +1320,11 @@ def inject_ui_v2_theme(theme: str = "dark"):
             {light_overrides}
 
             @keyframes pbSpin {{ to {{ transform: rotate(360deg); }} }}
+            @keyframes pbGlassSweep {{
+                0% {{ transform: translateX(-42%) rotate(4deg); opacity:.35; }}
+                50% {{ opacity:1; }}
+                100% {{ transform: translateX(42%) rotate(4deg); opacity:.35; }}
+            }}
             @keyframes pbFadeIn {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
             @keyframes pbPageIn {{ from {{ opacity:.2; transform:translateY(7px); }} to {{ opacity:1; transform:none; }} }}
             @keyframes pbReveal {{ from {{ opacity:0; transform:translateY(-6px); }} to {{ opacity:1; transform:none; }} }}

@@ -6,6 +6,7 @@ from ui.jira import render_jira_tab
 from ui.meetings import render_meetings_tab
 from ui.slack import render_slack_tab
 from repositories.workspace_repository import workspace_repository
+from ui_v2.assets import nav_icon_data_uri, svg_data_uri
 from ui_v2.state import get_current_project_id, get_dashboard_loader, set_dashboard_loader
 
 
@@ -56,34 +57,32 @@ def _latest_changes(project_id: str):
                 st.text(t("no_event_details"))
 
 
-def _source_card(title: str, caption: str, key: str, loader: str):
+def _source_card(title: str, caption: str, key: str, loader: str, icon_uri: str):
     st.markdown(
         f"""
-        <div class="pb-source-card">
-            <div class="pb-source-title">{title}</div>
-            <div class="pb-caption">{caption}</div>
+        <div class="pb-source-card" title="{caption}">
+            <div class="pb-source-title">
+                <span class="pb-source-icon" style="--pb-source-icon-url:url('{icon_uri}')"></span>{title}
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     is_open = get_dashboard_loader() == loader
-    if st.button(t("collapse") if is_open else t("open"), key=key, width="stretch"):
+    if st.button(
+        t("collapse") if is_open else t("open"),
+        key=key,
+        width="stretch",
+        help=caption,
+        icon=":material/expand_less:" if is_open else ":material/upload:",
+    ):
         set_dashboard_loader(None if is_open else loader)
         st.rerun()
 
 
 def _render_dashboard_loader(memory_repository):
     loader = get_dashboard_loader()
-
-    title_by_loader = {
-        "meetings": "Meetings loader",
-        "slack": "Slack importer",
-        "confluence": "Confluence importer",
-        "jira": "Jira importer",
-    }
-
-    st.markdown(f"#### {title_by_loader.get(loader, 'Data loader')}")
 
     if loader == "meetings":
         render_meetings_tab(memory_repository)
@@ -125,13 +124,19 @@ def render_dashboard(memory_repository):
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        _source_card(t("meetings"), t("meetings_card"), "dash_upload_meeting", "meetings")
+        _source_card(
+            t("meetings"), t("meetings_card"), "dash_upload_meeting", "meetings",
+            nav_icon_data_uri("meetings"),
+        )
     with c2:
-        _source_card("Slack", t("slack_card"), "dash_import_slack", "slack")
+        _source_card("Slack", t("slack_card"), "dash_import_slack", "slack", svg_data_uri("slack"))
     with c3:
-        _source_card("Confluence", t("confluence_card"), "dash_import_confluence", "confluence")
+        _source_card(
+            "Confluence", t("confluence_card"), "dash_import_confluence", "confluence",
+            svg_data_uri("confluence"),
+        )
     with c4:
-        _source_card("Jira", t("jira_card"), "dash_import_jira", "jira")
+        _source_card("Jira", t("jira_card"), "dash_import_jira", "jira", svg_data_uri("jira"))
 
     if get_dashboard_loader() is not None:
         with st.container(border=True, key="dashboard_active_loader"):
