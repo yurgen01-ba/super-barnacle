@@ -10,26 +10,22 @@ def render_sources(memory_repository):
     st.caption(t("sources_caption"))
 
     current = get_selected_source()
-    SOURCE_OPTIONS = source_options()
-    labels = list(SOURCE_OPTIONS.values())
-    keys = list(SOURCE_OPTIONS.keys())
+    options = source_options()
+    if current not in options:
+        current = next(iter(options))
+        set_selected_source(current)
 
-    try:
-        current_index = keys.index(current)
-    except ValueError:
-        current_index = 0
-
-    selected_label = st.radio(
-        t("source_type"),
-        labels,
-        index=current_index,
-        horizontal=True,
-        label_visibility="collapsed",
-        key="ui_v2_sources_radio",
-    )
-
-    selected_key = keys[labels.index(selected_label)]
-    set_selected_source(selected_key)
+    columns = st.columns(len(options))
+    for column, (source_key, source_label) in zip(columns, options.items()):
+        with column:
+            if st.button(
+                source_label,
+                key=f"pb_source_card_{source_key}_sources",
+                type="primary" if source_key == current else "secondary",
+                width="stretch",
+            ):
+                set_selected_source(source_key)
+                st.rerun()
 
     st.divider()
-    render_source_adapter(selected_key, memory_repository)
+    render_source_adapter(current, memory_repository)

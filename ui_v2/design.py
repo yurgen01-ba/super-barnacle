@@ -1663,6 +1663,7 @@ def inject_ui_v2_theme(theme: str = "dark"):
             [class*="st-key-pb_source_card_slack"] button::before {{ mask-image: url('{slack_icon}'); }}
             [class*="st-key-pb_source_card_confluence"] button::before {{ mask-image: url('{confluence_icon}'); }}
             [class*="st-key-pb_source_card_jira"] button::before {{ mask-image: url('{jira_icon}'); }}
+            [class*="st-key-pb_source_card_files"] button::before {{ mask-image: url('{nav_icons['files']}'); }}
 
             html body [class*="st-key-pb_source_card_"] [data-testid="stButton"] button p {{
                 margin: 0 !important;
