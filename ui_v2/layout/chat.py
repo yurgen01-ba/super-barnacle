@@ -76,76 +76,130 @@ def _render_artifact_area(memory_repository):
         )
 
 
-def _render_chat_content(key_prefix: str, *, input_height: int = 110) -> None:
+def _render_chat_content(
+    key_prefix: str,
+    *,
+    input_height: int = 110,
+    compact_prompts: bool = False,
+    answer_height: int | None = None,
+) -> None:
     pending_key = f"{key_prefix}_pending_question"
     input_key = f"{key_prefix}_question"
     answer_rendered = False
     prompts = [(t(f"prompt_{index}"), t(f"prompt_{index}")) for index in range(1, 5)]
 
-    for index, (label, prompt) in enumerate(prompts, start=1):
-        st.button(
-            label,
-            key=f"{key_prefix}_prompt_{index}",
-            width="stretch",
-            on_click=_queue_prompt,
-            args=(prompt, pending_key, input_key),
+    if compact_prompts:
+        for index, ((label, prompt), prompt_column) in enumerate(
+            zip(prompts, st.columns(4, gap="small")), start=1
+        ):
+            with prompt_column:
+                st.button(
+                    label,
+                    key=f"{key_prefix}_prompt_{index}",
+                    width="stretch",
+                    on_click=_queue_prompt,
+                    args=(prompt, pending_key, input_key),
+                )
+    else:
+        for index, (label, prompt) in enumerate(prompts, start=1):
+            st.button(
+                label,
+                key=f"{key_prefix}_prompt_{index}",
+                width="stretch",
+                on_click=_queue_prompt,
+                args=(prompt, pending_key, input_key),
+            )
+
+    if compact_prompts:
+        question_column, send_column = st.columns(
+            [0.82, 0.18], gap="small", vertical_alignment="bottom"
+        )
+    else:
+        question_column = st.container()
+        send_column = st.container()
+
+    with question_column:
+        question = st.text_area(
+            t("question"),
+            placeholder=t("ask_question"),
+            height=input_height,
+            label_visibility="collapsed",
+            key=input_key,
         )
 
-    question = st.text_area(
-        t("question"),
-        placeholder=t("ask_question"),
-        height=input_height,
-        label_visibility="collapsed",
-        key=input_key,
-    )
+    with send_column:
+        submitted = st.button(
+            t("send"),
+            key=f"{key_prefix}_send",
+            width="stretch",
+            type="primary",
+        )
 
-    if st.button(t("send"), key=f"{key_prefix}_send", width="stretch", type="primary") and question.strip():
+    if submitted and question.strip():
         st.session_state[pending_key] = question.strip()
 
     pending_question = st.session_state.pop(pending_key, "")
-    if pending_question:
-        project_id = get_current_project_id()
-        settings = workspace_repository.get_settings(project_id)
-        try:
-            text_provider = create_text_provider(
-                provider_name=settings.get("transcript_extractor_provider", "ollama"),
-                model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
-                host=settings.get("transcript_extractor_host", "http://localhost:11434"),
-                timeout_seconds=min(
-                    max(int(settings.get("transcript_extractor_timeout_seconds", 180)), 60),
-                    600,
-                ),
-                num_predict=320,
-            )
-            with inline_seal_loader(t("chat_reading_graph")):
-                if hasattr(st, "write_stream"):
-                    answer = st.write_stream(
-                        stream_project_question_over_graph(
+
+    def render_answer() -> None:
+        nonlocal answer_rendered
+        if pending_question:
+            project_id = get_current_project_id()
+            settings = workspace_repository.get_settings(project_id)
+            try:
+                text_provider = create_text_provider(
+                    provider_name=settings.get("transcript_extractor_provider", "ollama"),
+                    model=settings.get("transcript_extractor_model", "qwen2.5:7b"),
+                    host=settings.get("transcript_extractor_host", "http://localhost:11434"),
+                    timeout_seconds=min(
+                        max(int(settings.get("transcript_extractor_timeout_seconds", 180)), 60),
+                        600,
+                    ),
+                    num_predict=320,
+                )
+                with inline_seal_loader(t("chat_reading_graph")):
+                    if hasattr(st, "write_stream"):
+                        answer = st.write_stream(
+                            stream_project_question_over_graph(
+                                pending_question,
+                                text_provider=text_provider,
+                                graph_retriever=GraphRetrieverV2(project_id=project_id),
+                            )
+                        )
+                        answer_rendered = True
+                    else:
+                        answer = answer_project_question_over_graph(
                             pending_question,
                             text_provider=text_provider,
                             graph_retriever=GraphRetrieverV2(project_id=project_id),
                         )
-                    )
-                    answer_rendered = True
-                else:
-                    answer = answer_project_question_over_graph(
-                        pending_question,
-                        text_provider=text_provider,
-                        graph_retriever=GraphRetrieverV2(project_id=project_id),
-                    )
-        except Exception as exc:
-            answer = t("chat_model_error").format(error=str(exc))
-        st.session_state.ui_v2_last_answer = answer
+            except Exception as exc:
+                answer = t("chat_model_error").format(error=str(exc))
+            st.session_state.ui_v2_last_answer = answer
 
-    if st.session_state.get("ui_v2_last_answer") and not answer_rendered:
-        st.markdown(st.session_state.ui_v2_last_answer)
+        if st.session_state.get("ui_v2_last_answer") and not answer_rendered:
+            st.markdown(st.session_state.ui_v2_last_answer)
+
+    if answer_height:
+        with st.container(
+            height=answer_height,
+            border=True,
+            key=f"{key_prefix}_answer_panel",
+        ):
+            render_answer()
+    else:
+        render_answer()
 
 
 def _open_fullscreen_chat() -> None:
     @st.dialog(t("chat"), width="large")
     def _dialog() -> None:
         st.markdown('<span class="pb-fullscreen-chat-marker"></span>', unsafe_allow_html=True)
-        _render_chat_content("ui_v2_fullscreen_chat", input_height=220)
+        _render_chat_content(
+            "ui_v2_fullscreen_chat",
+            input_height=82,
+            compact_prompts=True,
+            answer_height=430,
+        )
 
     _dialog()
 

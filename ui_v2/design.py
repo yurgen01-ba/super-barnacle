@@ -167,13 +167,26 @@ def inject_ui_v2_theme(theme: str = "dark"):
                 max-height: 100vh !important;
                 border-radius: 0 !important;
                 margin: 0 !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
             }
 
             [data-testid="stDialog"] [role="dialog"]:has(.pb-fullscreen-chat-marker)
             > div {
-                max-width: 1180px;
-                width: 100%;
+                max-width: min(1380px, calc(100vw - 48px));
+                width: calc(100% - 48px);
                 margin: 0 auto;
+                box-sizing: border-box;
+                overflow-x: hidden;
+            }
+
+            [data-testid="stDialogContent"]:has(.pb-fullscreen-chat-marker) {
+                width: min(1380px, calc(100vw - 48px)) !important;
+                max-width: min(1380px, calc(100vw - 48px)) !important;
+                margin: 0 auto !important;
+                padding-inline: 0 !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
             }
 
             h1, h2, h3 {
