@@ -7,3 +7,4 @@ pypdf
 py7zr
 cryptography
 httpx
+playwright>=1.49,<2

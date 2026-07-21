@@ -23,6 +23,7 @@ from services.participant_extraction_service import (
 )
 from services.speaker_sample_service import create_speaker_samples
 from services.atlassian_sync_service import atlassian_sync_service
+from services.local_browser_connector import local_browser_connector_service
 from utils.text import chunk_text
 
 
@@ -63,6 +64,32 @@ def process_atlassian_sync_job(
         connection_id=connection_id,
         user_id=user_id,
         project_id=project_id,
+        sync_jira=sync_jira,
+        sync_confluence=sync_confluence,
+        progress=update,
+    )
+
+
+def process_local_browser_sync_job(
+    session_id: str,
+    user_id: str,
+    provider: str,
+    project_id: str = "default",
+    sync_jira: bool = True,
+    sync_confluence: bool = True,
+    job: RunningJob | None = None,
+) -> dict[str, Any]:
+    progress = JobProgress(job) if job else None
+
+    def update(value: float, stage: str, message: str):
+        if progress:
+            progress.update(value, stage, message)
+
+    return local_browser_connector_service.sync(
+        session_id=session_id,
+        user_id=user_id,
+        project_id=project_id,
+        provider=provider,
         sync_jira=sync_jira,
         sync_confluence=sync_confluence,
         progress=update,

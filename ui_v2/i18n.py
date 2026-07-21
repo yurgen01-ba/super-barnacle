@@ -631,6 +631,62 @@ ATLASSIAN_TRANSLATIONS = {
 for _language, _values in ATLASSIAN_TRANSLATIONS.items():
     TRANSLATIONS[_language].update(_values)
 
+LOCAL_BROWSER_TRANSLATIONS = {
+    "ru": {
+        "local_browser_connector": "Локальный вход через браузер (fallback)",
+        "local_browser_connector_caption": "Используйте, если OAuth или API недоступны. Project Brain откроет отдельное окно: войдите самостоятельно. Пароль не считывается, временная браузерная сессия уничтожается после импорта.",
+        "browser_site_url": "Адрес сайта или workspace",
+        "browser_site_url_help_atlassian": "Например https://company.atlassian.net или внутренний адрес Jira/Confluence, доступный через VPN.",
+        "browser_site_url_help_slack": "Например https://app.slack.com/client или адрес вашего Slack workspace.",
+        "open_secure_browser": "Открыть окно для входа",
+        "browser_opened_login": "Окно браузера открыто. Войдите в сервис и вернитесь сюда.",
+        "browser_session_active": "Временная локальная браузерная сессия активна.",
+        "browser_login_instruction": "Завершите вход в открытом окне и откройте нужный Jira/Confluence site или Slack workspace. Не закрывайте окно до окончания импорта.",
+        "import_from_open_browser": "Импортировать доступные данные",
+        "check_login": "Проверить",
+        "close_browser": "Закрыть",
+        "browser_session_deleted": "Браузер закрыт, временный профиль и данные сессии удалены.",
+        "browser_sync_started": "Импорт из локального браузера запущен в фоне. После завершения временная сессия будет удалена.",
+        "browser_import_product": "Будет импортирован продукт: {product}.",
+    },
+    "en": {
+        "local_browser_connector": "Local browser sign-in (fallback)",
+        "local_browser_connector_caption": "Use this when OAuth or an API is unavailable. Project Brain opens a separate window where you sign in yourself. It never reads the password and destroys the temporary browser session after import.",
+        "browser_site_url": "Site or workspace URL",
+        "browser_site_url_help_atlassian": "For example https://company.atlassian.net or an internal Jira/Confluence URL available through your VPN.",
+        "browser_site_url_help_slack": "For example https://app.slack.com/client or your Slack workspace URL.",
+        "open_secure_browser": "Open sign-in window",
+        "browser_opened_login": "The browser window is open. Sign in to the service and return here.",
+        "browser_session_active": "A temporary local browser session is active.",
+        "browser_login_instruction": "Finish signing in and open the required Jira/Confluence site or Slack workspace. Keep the window open until import finishes.",
+        "import_from_open_browser": "Import accessible data",
+        "check_login": "Check",
+        "close_browser": "Close",
+        "browser_session_deleted": "The browser is closed and its temporary profile and session data were deleted.",
+        "browser_sync_started": "Local browser import started in the background. The temporary session will be deleted when it finishes.",
+        "browser_import_product": "Product to import: {product}.",
+    },
+    "uk": {
+        "local_browser_connector": "Локальний вхід через браузер (fallback)",
+        "local_browser_connector_caption": "Використовуйте, якщо OAuth або API недоступні. Project Brain відкриє окреме вікно: увійдіть самостійно. Пароль не зчитується, тимчасова браузерна сесія видаляється після імпорту.",
+        "browser_site_url": "Адреса сайту або workspace",
+        "browser_site_url_help_atlassian": "Наприклад https://company.atlassian.net або внутрішня адреса Jira/Confluence, доступна через VPN.",
+        "browser_site_url_help_slack": "Наприклад https://app.slack.com/client або адреса вашого Slack workspace.",
+        "open_secure_browser": "Відкрити вікно для входу",
+        "browser_opened_login": "Вікно браузера відкрито. Увійдіть у сервіс і поверніться сюди.",
+        "browser_session_active": "Тимчасова локальна браузерна сесія активна.",
+        "browser_login_instruction": "Завершіть вхід і відкрийте потрібний Jira/Confluence site або Slack workspace. Не закривайте вікно до завершення імпорту.",
+        "import_from_open_browser": "Імпортувати доступні дані",
+        "check_login": "Перевірити",
+        "close_browser": "Закрити",
+        "browser_session_deleted": "Браузер закрито, тимчасовий профіль і дані сесії видалено.",
+        "browser_sync_started": "Імпорт із локального браузера запущено у фоні. Після завершення тимчасову сесію буде видалено.",
+        "browser_import_product": "Буде імпортовано продукт: {product}.",
+    },
+}
+for _language, _values in LOCAL_BROWSER_TRANSLATIONS.items():
+    TRANSLATIONS[_language].update(_values)
+
 
 def _browser_language() -> str:
     try:

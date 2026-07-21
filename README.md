@@ -73,3 +73,26 @@ For production, use an HTTPS callback and set a stable
 in the ignored `data/.oauth_token_key` file. After configuration, open project settings,
 select **Atlassian**, authorize the account, then start synchronization for the required
 site.
+
+### Local browser fallback for Atlassian and Slack
+
+When OAuth/API access cannot be approved, each Jira, Confluence and Slack loader also
+offers a **Local browser sign-in (fallback)**. Enter the product or workspace URL and
+click **Open sign-in window**. Project Brain starts an isolated, visible Chrome/Edge
+profile; the user completes the normal SSO/MFA flow directly on the vendor page.
+
+- Project Brain never asks for or reads the password.
+- The connector is limited to resources visible to the signed-in account.
+- Jira/Confluence are read through their same-origin read-only endpoints from the
+  authenticated browser session. This also works for local/VPN-accessible Data Center
+  installations when the host machine can reach them.
+- Slack fallback walks the conversations currently visible in the web workspace UI.
+  Archived, hidden or unloaded channels may require an official Slack export/API.
+- The temporary browser profile, cookies and session data are deleted when import ends
+  or the user clicks **Close**.
+- The connector is intentionally visible and does not bypass SSO, MFA, CAPTCHA,
+  workspace policies or access controls.
+
+Install dependencies with `pip install -r requirements.txt`. A separate Playwright
+browser download is not required: the connector discovers installed Chrome or Edge.
+Set `PROJECT_BRAIN_BROWSER_EXECUTABLE` only when automatic discovery is insufficient.

@@ -9,6 +9,7 @@ from services.atlassian_oauth_service import atlassian_oauth_service
 from ui_v2.auth import get_authenticated_email, get_authenticated_user
 from ui_v2.i18n import t
 from ui_v2.state import get_current_project_id
+from ui_v2.browser_connectors import render_local_browser_connector
 
 
 def render_atlassian_oauth_callback() -> bool:
@@ -65,8 +66,6 @@ def render_atlassian_settings() -> None:
     connections = atlassian_connection_repository.list_for_project(project_id, user["id"])
     if not connections:
         st.info(t("atlassian_no_connections"))
-        return
-
     for connection in connections:
         scopes = set(connection.get("scopes", []))
         jira_available = any("jira" in scope for scope in scopes)
@@ -119,3 +118,6 @@ def render_atlassian_settings() -> None:
                     )
                     st.success(t("atlassian_disconnected"))
                     st.rerun()
+
+    st.divider()
+    render_local_browser_connector("atlassian")

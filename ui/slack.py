@@ -8,6 +8,7 @@ from ui.job_status import render_job_status
 from ui_v2.state import get_current_project_id
 from ui_v2.auth import get_authenticated_email
 from ui_v2.i18n import t
+from ui_v2.browser_connectors import render_local_browser_connector
 
 
 def _render_active_job(project_id: str):
@@ -29,6 +30,9 @@ def _render_active_job(project_id: str):
 def render_slack_tab(memory_repository: MemoryRepository):
     project_id = get_current_project_id()
     st.header(t("slack_analysis"))
+
+    render_local_browser_connector("slack")
+    st.markdown('<div class="pb-compact-divider"></div>', unsafe_allow_html=True)
 
     slack_text = st.text_area(
         t("paste_slack"),
