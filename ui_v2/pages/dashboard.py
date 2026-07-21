@@ -6,7 +6,12 @@ from ui.jira import render_jira_tab
 from ui.meetings import render_meetings_tab
 from ui.slack import render_slack_tab
 from repositories.workspace_repository import workspace_repository
-from ui_v2.state import get_current_project_id, get_dashboard_loader, set_dashboard_loader
+from ui_v2.state import (
+    dismiss_latest_source_job_result,
+    get_current_project_id,
+    get_dashboard_loader,
+    set_dashboard_loader,
+)
 
 
 def _latest_changes(project_id: str):
@@ -59,6 +64,8 @@ def _latest_changes(project_id: str):
 
 def _toggle_source_card(loader: str):
     current_loader = get_dashboard_loader()
+    if current_loader:
+        dismiss_latest_source_job_result(get_current_project_id(), current_loader)
     set_dashboard_loader(None if current_loader == loader else loader)
 
 

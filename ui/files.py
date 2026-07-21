@@ -10,7 +10,7 @@ from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
 from ui_v2.auth import get_authenticated_email
-from ui_v2.state import get_current_project_id
+from ui_v2.state import get_current_project_id, is_job_result_dismissed
 from ui_v2.i18n import t
 
 
@@ -48,7 +48,7 @@ def render_files_tab(memory_repository):
         return
 
     latest_job = service.latest(active_only=False, project_id=project_id, source_section="files")
-    if latest_job:
+    if latest_job and not is_job_result_dismissed(latest_job.id):
         render_job_status(latest_job.id)
 
     if st.button(t("process_files"), type="primary"):

@@ -5,7 +5,7 @@ from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
 from repositories.memory_repository import MemoryRepository
 from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
-from ui_v2.state import get_current_project_id
+from ui_v2.state import get_current_project_id, is_job_result_dismissed
 from ui_v2.auth import get_authenticated_email
 from ui_v2.i18n import t
 from ui_v2.source_connections import render_source_authorization
@@ -21,7 +21,7 @@ def _render_active_job(project_id: str):
         return active_job
 
     latest_job = service.latest(active_only=False, project_id=project_id, source_section="slack")
-    if latest_job:
+    if latest_job and not is_job_result_dismissed(latest_job.id):
         render_job_status(latest_job.id)
 
     return None

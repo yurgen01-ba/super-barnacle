@@ -6,6 +6,33 @@ DEFAULT_PROJECT = "default"
 DEFAULT_SOURCE = "meetings"
 DEFAULT_DASHBOARD_LOADER = None
 DEFAULT_CHAT_ARTIFACT = None
+DISMISSED_JOB_RESULTS_KEY = "ui_v2_dismissed_job_results"
+
+
+def dismiss_latest_source_job_result(project_id: str, source_section: str) -> None:
+    """Hide the current terminal result after its loader has been closed."""
+    if not project_id or not source_section:
+        return
+
+    from jobs.knowledge_extraction_service import KnowledgeExtractionJobService
+
+    job = KnowledgeExtractionJobService().latest(
+        active_only=False,
+        project_id=project_id,
+        source_section=source_section,
+    )
+    if not job or job.is_active():
+        return
+
+    dismissed = set(st.session_state.get(DISMISSED_JOB_RESULTS_KEY, []))
+    dismissed.add(job.id)
+    st.session_state[DISMISSED_JOB_RESULTS_KEY] = list(dismissed)
+
+
+def is_job_result_dismissed(job_id: str) -> bool:
+    return bool(job_id) and job_id in set(
+        st.session_state.get(DISMISSED_JOB_RESULTS_KEY, [])
+    )
 
 
 def get_current_page() -> str:
@@ -15,6 +42,14 @@ def get_current_page() -> str:
 
 
 def set_current_page(page: str):
+    if (
+        st.session_state.get("ui_v2_page") == "sources"
+        and page != "sources"
+    ):
+        dismiss_latest_source_job_result(
+            get_current_project_id(),
+            st.session_state.get("ui_v2_selected_source", DEFAULT_SOURCE),
+        )
     st.session_state.ui_v2_page = page
 
 
@@ -52,6 +87,9 @@ def get_selected_source() -> str:
 
 
 def set_selected_source(source: str):
+    previous = st.session_state.get("ui_v2_selected_source")
+    if previous and previous != source:
+        dismiss_latest_source_job_result(get_current_project_id(), previous)
     st.session_state.ui_v2_selected_source = source
 
 

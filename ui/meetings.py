@@ -13,7 +13,11 @@ from repositories.participant_repository import participant_repository
 from repositories.workspace_repository import workspace_repository
 from ui.job_status import render_job_status
 from ui_v2.auth import get_authenticated_email
-from ui_v2.state import get_current_project_id, set_current_page
+from ui_v2.state import (
+    get_current_project_id,
+    is_job_result_dismissed,
+    set_current_page,
+)
 from ui_v2.i18n import t
 
 
@@ -129,7 +133,7 @@ def _render_active_job(project_id: str):
         render_job_status(active_job.id, _completed_speaker_controls(project_id))
         return active_job
     latest_job = service.latest(active_only=False, project_id=project_id, source_section="meetings")
-    if latest_job:
+    if latest_job and not is_job_result_dismissed(latest_job.id):
         render_job_status(latest_job.id, _completed_speaker_controls(project_id))
     return None
 
